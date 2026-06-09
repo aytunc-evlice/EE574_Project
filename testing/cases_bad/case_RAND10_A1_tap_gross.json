@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND10_A1_tap_gross.dat",
+  "source_case": "case_RAND10",
+  "fault_code": "A1_tap_gross",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+  "seed": 5008,
+  "target": {
+    "type": "branch",
+    "from": 3,
+    "to": 5
+  },
+  "field": "tap",
+  "original": 0.9041693148161548,
+  "corrupted": 0.7233
+}

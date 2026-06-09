@@ -1,0 +1,17 @@
+{
+  "file": "case_IEEE14_B1_endpoint.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "B1_endpoint",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+  "seed": 2011,
+  "target": {
+    "type": "branch",
+    "from": 9,
+    "to": 11
+  },
+  "field": "to_bus",
+  "original": 11,
+  "corrupted": 12
+}

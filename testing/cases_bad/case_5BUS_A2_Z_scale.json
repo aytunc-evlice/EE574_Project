@@ -1,0 +1,24 @@
+{
+  "file": "case_5BUS_A2_Z_scale.dat",
+  "source_case": "case_5BUS",
+  "fault_code": "A2_Z_scale",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+  "seed": 1010,
+  "target": {
+    "type": "branch",
+    "from": 3,
+    "to": 4
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.0132,
+    "X": 0.0379
+  },
+  "corrupted": {
+    "R": 0.132,
+    "X": 0.379
+  },
+  "factor": 10
+}

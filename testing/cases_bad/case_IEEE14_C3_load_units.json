@@ -1,0 +1,23 @@
+{
+  "file": "case_IEEE14_C3_load_units.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "C3_load_units",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+  "seed": 2017,
+  "target": {
+    "type": "bus",
+    "num": 5
+  },
+  "field": "P_load,Q_load",
+  "original": {
+    "P": 0.9420000000000001,
+    "Q": 0.19
+  },
+  "corrupted": {
+    "P": 0.0094,
+    "Q": 0.0019
+  },
+  "factor": 0.01
+}

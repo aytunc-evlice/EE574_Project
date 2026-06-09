@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND7_B1_endpoint.dat",
+  "source_case": "case_RAND7",
+  "fault_code": "B1_endpoint",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+  "seed": 4011,
+  "target": {
+    "type": "branch",
+    "from": 2,
+    "to": 5
+  },
+  "field": "to_bus",
+  "original": 5,
+  "corrupted": 3
+}

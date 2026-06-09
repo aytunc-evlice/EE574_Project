@@ -1,0 +1,23 @@
+{
+  "file": "case_IEEE14_A2_Z_swap.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "A2_Z_swap",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+  "seed": 2009,
+  "target": {
+    "type": "branch",
+    "from": 6,
+    "to": 8
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.012,
+    "X": 0.042
+  },
+  "corrupted": {
+    "R": 0.042,
+    "X": 0.012
+  }
+}

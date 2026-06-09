@@ -1,0 +1,1950 @@
+{
+  "count": 103,
+  "faults": [
+    {
+      "file": "case_3BUS_A2_Z_swap.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 9,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 3
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05,
+        "X": 0.16
+      },
+      "corrupted": {
+        "R": 0.16,
+        "X": 0.05
+      }
+    },
+    {
+      "file": "case_3BUS_A2_Z_scale.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 10,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.04,
+        "X": 0.12
+      },
+      "corrupted": {
+        "R": 0.4,
+        "X": 1.2
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_3BUS_B3_missing.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 13,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_3BUS_B4_parallel.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 14,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 2
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_3BUS_C1_type_flip.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 15,
+      "target": {
+        "type": "bus",
+        "num": 2
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_3BUS_C2_voltage.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 16,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "V",
+      "original": 1.015,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_3BUS_C3_load_units.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 17,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 101.4174395401274,
+        "Q": 17.87820709635712
+      },
+      "corrupted": {
+        "P": 1.0142,
+        "Q": 0.1788
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_3BUS_C3_loadgen_swap.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 18,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 101.4174395401274,
+        "Q_load": 17.87820709635712,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 101.4174395401274,
+        "Q_gen": 17.87820709635712
+      }
+    },
+    {
+      "file": "case_3BUS_C4_shunt.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 19,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "B_sh",
+      "original": 0.02,
+      "corrupted": 0.32
+    },
+    {
+      "file": "case_3BUS_C5_dup_busnum.dat",
+      "source_case": "case_3BUS",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 20,
+      "target": {
+        "type": "bus",
+        "num": 2
+      },
+      "field": "num",
+      "original": 2,
+      "corrupted": 1
+    },
+    {
+      "file": "case_5BUS_A1_tap_subtle.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 1007,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 4
+      },
+      "field": "tap",
+      "original": 0.95,
+      "corrupted": 0.93
+    },
+    {
+      "file": "case_5BUS_A1_tap_gross.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 1008,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 4
+      },
+      "field": "tap",
+      "original": 0.95,
+      "corrupted": 0.76
+    },
+    {
+      "file": "case_5BUS_A2_Z_swap.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 1009,
+      "target": {
+        "type": "branch",
+        "from": 3,
+        "to": 4
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.0132,
+        "X": 0.0379
+      },
+      "corrupted": {
+        "R": 0.0379,
+        "X": 0.0132
+      }
+    },
+    {
+      "file": "case_5BUS_A2_Z_scale.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 1010,
+      "target": {
+        "type": "branch",
+        "from": 3,
+        "to": 4
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.0132,
+        "X": 0.0379
+      },
+      "corrupted": {
+        "R": 0.132,
+        "X": 0.379
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_5BUS_B1_endpoint.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 1011,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 3
+      },
+      "field": "to_bus",
+      "original": 3,
+      "corrupted": 4
+    },
+    {
+      "file": "case_5BUS_B2_orient_xfmr.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 1012,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 4
+      },
+      "field": "orientation",
+      "original": "2->4",
+      "corrupted": "4->2"
+    },
+    {
+      "file": "case_5BUS_B3_missing.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 1013,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 2
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_5BUS_B4_parallel.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 1014,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 4
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_5BUS_C1_type_flip.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 1015,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_5BUS_C2_voltage.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 1016,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "V",
+      "original": 1.01,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_5BUS_C3_load_units.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 1017,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 129.3333320303301,
+        "Q": 46.67854006400941
+      },
+      "corrupted": {
+        "P": 1.2933,
+        "Q": 0.4668
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_5BUS_C3_loadgen_swap.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 1018,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 24.108752815304324,
+        "Q_gen": 2.9318888232827645
+      },
+      "corrupted": {
+        "P_load": 24.108752815304324,
+        "Q_load": 2.9318888232827645,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      }
+    },
+    {
+      "file": "case_5BUS_C4_shunt.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 1019,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "B_sh",
+      "original": 0.0,
+      "corrupted": 0.3
+    },
+    {
+      "file": "case_5BUS_C5_dup_busnum.dat",
+      "source_case": "case_5BUS",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 1020,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "num",
+      "original": 3,
+      "corrupted": 4
+    },
+    {
+      "file": "case_IEEE14_A1_tap_subtle.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 2007,
+      "target": {
+        "type": "branch",
+        "from": 6,
+        "to": 10
+      },
+      "field": "tap",
+      "original": 0.969,
+      "corrupted": 0.949
+    },
+    {
+      "file": "case_IEEE14_A1_tap_gross.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 2008,
+      "target": {
+        "type": "branch",
+        "from": 4,
+        "to": 12
+      },
+      "field": "tap",
+      "original": 0.932,
+      "corrupted": 0.7456
+    },
+    {
+      "file": "case_IEEE14_A2_Z_swap.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 2009,
+      "target": {
+        "type": "branch",
+        "from": 6,
+        "to": 8
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.012,
+        "X": 0.042
+      },
+      "corrupted": {
+        "R": 0.042,
+        "X": 0.012
+      }
+    },
+    {
+      "file": "case_IEEE14_A2_Z_scale.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 2010,
+      "target": {
+        "type": "branch",
+        "from": 9,
+        "to": 10
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.0,
+        "X": 0.11
+      },
+      "corrupted": {
+        "R": 0.0,
+        "X": 1.1
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_IEEE14_B1_endpoint.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 2011,
+      "target": {
+        "type": "branch",
+        "from": 9,
+        "to": 11
+      },
+      "field": "to_bus",
+      "original": 11,
+      "corrupted": 12
+    },
+    {
+      "file": "case_IEEE14_B2_orient_xfmr.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 2012,
+      "target": {
+        "type": "branch",
+        "from": 4,
+        "to": 12
+      },
+      "field": "orientation",
+      "original": "4->12",
+      "corrupted": "12->4"
+    },
+    {
+      "file": "case_IEEE14_B3_missing.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 2013,
+      "target": {
+        "type": "branch",
+        "from": 6,
+        "to": 7
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_IEEE14_B4_parallel.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 2014,
+      "target": {
+        "type": "branch",
+        "from": 4,
+        "to": 6
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_IEEE14_C1_type_flip.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 2015,
+      "target": {
+        "type": "bus",
+        "num": 11
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_IEEE14_C2_voltage.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 2016,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "V",
+      "original": 1.012,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_IEEE14_C3_load_units.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 2017,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 0.9420000000000001,
+        "Q": 0.19
+      },
+      "corrupted": {
+        "P": 0.0094,
+        "Q": 0.0019
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_IEEE14_C3_loadgen_swap.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 2018,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 0.9420000000000001,
+        "Q_load": 0.19,
+        "P_gen": 0.0,
+        "Q_gen": 0.37
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.37,
+        "P_gen": 0.9420000000000001,
+        "Q_gen": 0.19
+      }
+    },
+    {
+      "file": "case_IEEE14_C4_shunt.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 2019,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "B_sh",
+      "original": 0.0,
+      "corrupted": 0.3
+    },
+    {
+      "file": "case_IEEE14_C5_dup_busnum.dat",
+      "source_case": "case_IEEE14",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 2020,
+      "target": {
+        "type": "bus",
+        "num": 7
+      },
+      "field": "num",
+      "original": 7,
+      "corrupted": 1
+    },
+    {
+      "file": "case_RAND4_A2_Z_swap.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 3009,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 3
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.03580865203105979,
+        "X": 0.12119220548007544
+      },
+      "corrupted": {
+        "R": 0.12119220548007544,
+        "X": 0.03580865203105979
+      }
+    },
+    {
+      "file": "case_RAND4_A2_Z_scale.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 3010,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05035581879302082,
+        "X": 0.17651161982485084
+      },
+      "corrupted": {
+        "R": 0.503558,
+        "X": 1.765116
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_RAND4_B1_endpoint.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 3011,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "to_bus",
+      "original": 3,
+      "corrupted": 4
+    },
+    {
+      "file": "case_RAND4_B3_missing.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 3013,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_RAND4_B4_parallel.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 3014,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 3
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_RAND4_C2_voltage.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 3016,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "V",
+      "original": 0.9653026128070588,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_RAND4_C3_load_units.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 3017,
+      "target": {
+        "type": "bus",
+        "num": 2
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 218.20786744255537,
+        "Q": 44.53492334498699
+      },
+      "corrupted": {
+        "P": 2.1821,
+        "Q": 0.4453
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_RAND4_C3_loadgen_swap.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 3018,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 70.12066587113503,
+        "Q_load": -15.527630375778864,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 70.12066587113503,
+        "Q_gen": -15.527630375778864
+      }
+    },
+    {
+      "file": "case_RAND4_C4_shunt.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 3019,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "B_sh",
+      "original": 0.0,
+      "corrupted": 0.3
+    },
+    {
+      "file": "case_RAND4_C5_dup_busnum.dat",
+      "source_case": "case_RAND4",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 3020,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "num",
+      "original": 3,
+      "corrupted": 2
+    },
+    {
+      "file": "case_RAND7_A1_tap_subtle.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 4007,
+      "target": {
+        "type": "branch",
+        "from": 5,
+        "to": 6
+      },
+      "field": "tap",
+      "original": 0.9695347139058441,
+      "corrupted": 0.9495
+    },
+    {
+      "file": "case_RAND7_A1_tap_gross.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 4008,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 4
+      },
+      "field": "tap",
+      "original": 0.9891398520807814,
+      "corrupted": 0.7913
+    },
+    {
+      "file": "case_RAND7_A2_Z_swap.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 4009,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 6
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.017840458212054596,
+        "X": 0.18146945756036298
+      },
+      "corrupted": {
+        "R": 0.18146945756036298,
+        "X": 0.017840458212054596
+      }
+    },
+    {
+      "file": "case_RAND7_A2_Z_scale.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 4010,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 5
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.014995849077362202,
+        "X": 0.044661019881186134
+      },
+      "corrupted": {
+        "R": 0.149958,
+        "X": 0.44661
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_RAND7_B1_endpoint.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 4011,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 5
+      },
+      "field": "to_bus",
+      "original": 5,
+      "corrupted": 3
+    },
+    {
+      "file": "case_RAND7_B2_orient_xfmr.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 4012,
+      "target": {
+        "type": "branch",
+        "from": 5,
+        "to": 6
+      },
+      "field": "orientation",
+      "original": "5->6",
+      "corrupted": "6->5"
+    },
+    {
+      "file": "case_RAND7_B3_missing.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 4013,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 5
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_RAND7_B4_parallel.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 4014,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 2
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_RAND7_C1_type_flip.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 4015,
+      "target": {
+        "type": "bus",
+        "num": 3
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_RAND7_C2_voltage.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 4016,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "V",
+      "original": 1.0485336351849293,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_RAND7_C3_load_units.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 4017,
+      "target": {
+        "type": "bus",
+        "num": 7
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 109.71895861340057,
+        "Q": -8.140276339623224
+      },
+      "corrupted": {
+        "P": 1.0972,
+        "Q": -0.0814
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_RAND7_C3_loadgen_swap.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 4018,
+      "target": {
+        "type": "bus",
+        "num": 6
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": -5.693139081435037,
+        "Q_load": 121.29024018380956,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": -5.693139081435037,
+        "Q_gen": 121.29024018380956
+      }
+    },
+    {
+      "file": "case_RAND7_C4_shunt.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 4019,
+      "target": {
+        "type": "bus",
+        "num": 6
+      },
+      "field": "B_sh",
+      "original": 0.0,
+      "corrupted": 0.3
+    },
+    {
+      "file": "case_RAND7_C5_dup_busnum.dat",
+      "source_case": "case_RAND7",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 4020,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "num",
+      "original": 4,
+      "corrupted": 3
+    },
+    {
+      "file": "case_RAND10_A1_tap_subtle.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 5007,
+      "target": {
+        "type": "branch",
+        "from": 3,
+        "to": 5
+      },
+      "field": "tap",
+      "original": 0.9041693148161548,
+      "corrupted": 0.8842
+    },
+    {
+      "file": "case_RAND10_A1_tap_gross.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 5008,
+      "target": {
+        "type": "branch",
+        "from": 3,
+        "to": 5
+      },
+      "field": "tap",
+      "original": 0.9041693148161548,
+      "corrupted": 0.7233
+    },
+    {
+      "file": "case_RAND10_A2_Z_swap.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 5009,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 5
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05442547254669613,
+        "X": 0.16041431298415165
+      },
+      "corrupted": {
+        "R": 0.16041431298415165,
+        "X": 0.05442547254669613
+      }
+    },
+    {
+      "file": "case_RAND10_A2_Z_scale.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 5010,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 5
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05442547254669613,
+        "X": 0.16041431298415165
+      },
+      "corrupted": {
+        "R": 0.544255,
+        "X": 1.604143
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_RAND10_B1_endpoint.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 5011,
+      "target": {
+        "type": "branch",
+        "from": 2,
+        "to": 3
+      },
+      "field": "to_bus",
+      "original": 3,
+      "corrupted": 7
+    },
+    {
+      "file": "case_RAND10_B2_orient_xfmr.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 5012,
+      "target": {
+        "type": "branch",
+        "from": 5,
+        "to": 9
+      },
+      "field": "orientation",
+      "original": "5->9",
+      "corrupted": "9->5"
+    },
+    {
+      "file": "case_RAND10_B3_missing.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 5013,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 5
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_RAND10_B4_parallel.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 5014,
+      "target": {
+        "type": "branch",
+        "from": 6,
+        "to": 7
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_RAND10_C2_voltage.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 5016,
+      "target": {
+        "type": "bus",
+        "num": 8
+      },
+      "field": "V",
+      "original": 1.005365653044866,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_RAND10_C3_load_units.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 5017,
+      "target": {
+        "type": "bus",
+        "num": 2
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 218.52156301791283,
+        "Q": -151.914517002158
+      },
+      "corrupted": {
+        "P": 2.1852,
+        "Q": -1.5191
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_RAND10_C3_loadgen_swap.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 5018,
+      "target": {
+        "type": "bus",
+        "num": 6
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 48.04438332116809,
+        "Q_load": -44.990542847666276,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 48.04438332116809,
+        "Q_gen": -44.990542847666276
+      }
+    },
+    {
+      "file": "case_RAND10_C4_shunt.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 5019,
+      "target": {
+        "type": "bus",
+        "num": 4
+      },
+      "field": "B_sh",
+      "original": 0.02,
+      "corrupted": 0.32
+    },
+    {
+      "file": "case_RAND10_C5_dup_busnum.dat",
+      "source_case": "case_RAND10",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 5020,
+      "target": {
+        "type": "bus",
+        "num": 5
+      },
+      "field": "num",
+      "original": 5,
+      "corrupted": 6
+    },
+    {
+      "file": "case_RAND20_A1_tap_subtle.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 6007,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 5
+      },
+      "field": "tap",
+      "original": 0.9442611896186612,
+      "corrupted": 0.9243
+    },
+    {
+      "file": "case_RAND20_A1_tap_gross.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 6008,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 5
+      },
+      "field": "tap",
+      "original": 0.9442611896186612,
+      "corrupted": 0.7554
+    },
+    {
+      "file": "case_RAND20_A2_Z_swap.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 6009,
+      "target": {
+        "type": "branch",
+        "from": 6,
+        "to": 11
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.01938138326988001,
+        "X": 0.08508933747406378
+      },
+      "corrupted": {
+        "R": 0.08508933747406378,
+        "X": 0.01938138326988001
+      }
+    },
+    {
+      "file": "case_RAND20_A2_Z_scale.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 6010,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 6
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05609205644644078,
+        "X": 0.06379148974857396
+      },
+      "corrupted": {
+        "R": 0.560921,
+        "X": 0.637915
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_RAND20_B1_endpoint.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 6011,
+      "target": {
+        "type": "branch",
+        "from": 7,
+        "to": 14
+      },
+      "field": "to_bus",
+      "original": 14,
+      "corrupted": 17
+    },
+    {
+      "file": "case_RAND20_B2_orient_xfmr.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 6012,
+      "target": {
+        "type": "branch",
+        "from": 12,
+        "to": 16
+      },
+      "field": "orientation",
+      "original": "12->16",
+      "corrupted": "16->12"
+    },
+    {
+      "file": "case_RAND20_B3_missing.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 6013,
+      "target": {
+        "type": "branch",
+        "from": 7,
+        "to": 14
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_RAND20_B4_parallel.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 6014,
+      "target": {
+        "type": "branch",
+        "from": 14,
+        "to": 17
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_RAND20_C1_type_flip.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 6015,
+      "target": {
+        "type": "bus",
+        "num": 2
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_RAND20_C2_voltage.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 6016,
+      "target": {
+        "type": "bus",
+        "num": 12
+      },
+      "field": "V",
+      "original": 1.0465904009279783,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_RAND20_C3_load_units.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 6017,
+      "target": {
+        "type": "bus",
+        "num": 8
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 262.20642580587236,
+        "Q": 38.16157850773128
+      },
+      "corrupted": {
+        "P": 2.6221,
+        "Q": 0.3816
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_RAND20_C3_loadgen_swap.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 6018,
+      "target": {
+        "type": "bus",
+        "num": 13
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 43.443869731722955,
+        "Q_load": -76.41742846233693,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 43.443869731722955,
+        "Q_gen": -76.41742846233693
+      }
+    },
+    {
+      "file": "case_RAND20_C4_shunt.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 6019,
+      "target": {
+        "type": "bus",
+        "num": 16
+      },
+      "field": "B_sh",
+      "original": 0.0,
+      "corrupted": 0.3
+    },
+    {
+      "file": "case_RAND20_C5_dup_busnum.dat",
+      "source_case": "case_RAND20",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 6020,
+      "target": {
+        "type": "bus",
+        "num": 14
+      },
+      "field": "num",
+      "original": 14,
+      "corrupted": 9
+    },
+    {
+      "file": "case_RAND40_A1_tap_subtle.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "A1_tap_subtle",
+      "category": "A-branch-parameter",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+      "seed": 7007,
+      "target": {
+        "type": "branch",
+        "from": 12,
+        "to": 32
+      },
+      "field": "tap",
+      "original": 0.9629958904650499,
+      "corrupted": 0.943
+    },
+    {
+      "file": "case_RAND40_A1_tap_gross.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "A1_tap_gross",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+      "seed": 7008,
+      "target": {
+        "type": "branch",
+        "from": 15,
+        "to": 17
+      },
+      "field": "tap",
+      "original": 0.9889462060439524,
+      "corrupted": 0.7912
+    },
+    {
+      "file": "case_RAND40_A2_Z_swap.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "A2_Z_swap",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+      "seed": 7009,
+      "target": {
+        "type": "branch",
+        "from": 11,
+        "to": 13
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.05036423917806407,
+        "X": 0.1364367259161179
+      },
+      "corrupted": {
+        "R": 0.1364367259161179,
+        "X": 0.05036423917806407
+      }
+    },
+    {
+      "file": "case_RAND40_A2_Z_scale.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "A2_Z_scale",
+      "category": "A-branch-parameter",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+      "seed": 7010,
+      "target": {
+        "type": "branch",
+        "from": 10,
+        "to": 15
+      },
+      "field": "R,X",
+      "original": {
+        "R": 0.045000799130874625,
+        "X": 0.1666327210766133
+      },
+      "corrupted": {
+        "R": 0.450008,
+        "X": 1.666327
+      },
+      "factor": 10
+    },
+    {
+      "file": "case_RAND40_B1_endpoint.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "B1_endpoint",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+      "seed": 7011,
+      "target": {
+        "type": "branch",
+        "from": 22,
+        "to": 39
+      },
+      "field": "to_bus",
+      "original": 39,
+      "corrupted": 35
+    },
+    {
+      "file": "case_RAND40_B2_orient_xfmr.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "B2_orient_xfmr",
+      "category": "B-topology",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+      "seed": 7012,
+      "target": {
+        "type": "branch",
+        "from": 15,
+        "to": 17
+      },
+      "field": "orientation",
+      "original": "15->17",
+      "corrupted": "17->15"
+    },
+    {
+      "file": "case_RAND40_B3_missing.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "B3_missing",
+      "category": "B-topology",
+      "severity": "gross",
+      "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+      "seed": 7013,
+      "target": {
+        "type": "branch",
+        "from": 1,
+        "to": 10
+      },
+      "field": "branch",
+      "original": "present",
+      "corrupted": "deleted"
+    },
+    {
+      "file": "case_RAND40_B4_parallel.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "B4_parallel",
+      "category": "B-topology",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+      "seed": 7014,
+      "target": {
+        "type": "branch",
+        "from": 4,
+        "to": 8
+      },
+      "field": "branch",
+      "original": "1 circuit",
+      "corrupted": "2 (duplicated)"
+    },
+    {
+      "file": "case_RAND40_C1_type_flip.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C1_type_flip",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+      "seed": 7015,
+      "target": {
+        "type": "bus",
+        "num": 33
+      },
+      "field": "type",
+      "original": 2,
+      "corrupted": 0
+    },
+    {
+      "file": "case_RAND40_C2_voltage.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C2_voltage",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+      "seed": 7016,
+      "target": {
+        "type": "bus",
+        "num": 24
+      },
+      "field": "V",
+      "original": 0.9741662815558245,
+      "corrupted": 1.45
+    },
+    {
+      "file": "case_RAND40_C3_load_units.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C3_load_units",
+      "category": "C-bus-data",
+      "severity": "gross",
+      "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+      "seed": 7017,
+      "target": {
+        "type": "bus",
+        "num": 22
+      },
+      "field": "P_load,Q_load",
+      "original": {
+        "P": 26.939034842125913,
+        "Q": -28.462412418524615
+      },
+      "corrupted": {
+        "P": 0.2694,
+        "Q": -0.2846
+      },
+      "factor": 0.01
+    },
+    {
+      "file": "case_RAND40_C3_loadgen_swap.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C3_loadgen_swap",
+      "category": "C-bus-data",
+      "severity": "moderate",
+      "expected_manifestation": "parses OK; load and generation swapped at a bus",
+      "seed": 7018,
+      "target": {
+        "type": "bus",
+        "num": 19
+      },
+      "field": "load<->gen",
+      "original": {
+        "P_load": 111.38097503618525,
+        "Q_load": -169.87427762556462,
+        "P_gen": 0.0,
+        "Q_gen": 0.0
+      },
+      "corrupted": {
+        "P_load": 0.0,
+        "Q_load": 0.0,
+        "P_gen": 111.38097503618525,
+        "Q_gen": -169.87427762556462
+      }
+    },
+    {
+      "file": "case_RAND40_C4_shunt.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C4_shunt",
+      "category": "C-bus-data",
+      "severity": "subtle",
+      "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+      "seed": 7019,
+      "target": {
+        "type": "bus",
+        "num": 17
+      },
+      "field": "B_sh",
+      "original": 0.02,
+      "corrupted": 0.32
+    },
+    {
+      "file": "case_RAND40_C5_dup_busnum.dat",
+      "source_case": "case_RAND40",
+      "fault_code": "C5_dup_busnum",
+      "category": "C-bus-data",
+      "severity": "invalid",
+      "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+      "seed": 7020,
+      "target": {
+        "type": "bus",
+        "num": 28
+      },
+      "field": "num",
+      "original": 28,
+      "corrupted": 8
+    }
+  ]
+}

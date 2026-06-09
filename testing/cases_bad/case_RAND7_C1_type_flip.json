@@ -1,0 +1,16 @@
+{
+  "file": "case_RAND7_C1_type_flip.dat",
+  "source_case": "case_RAND7",
+  "fault_code": "C1_type_flip",
+  "category": "C-bus-data",
+  "severity": "moderate",
+  "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+  "seed": 4015,
+  "target": {
+    "type": "bus",
+    "num": 3
+  },
+  "field": "type",
+  "original": 2,
+  "corrupted": 0
+}

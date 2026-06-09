@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND20_B3_missing.dat",
+  "source_case": "case_RAND20",
+  "fault_code": "B3_missing",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+  "seed": 6013,
+  "target": {
+    "type": "branch",
+    "from": 7,
+    "to": 14
+  },
+  "field": "branch",
+  "original": "present",
+  "corrupted": "deleted"
+}

@@ -1,0 +1,23 @@
+{
+  "file": "case_RAND7_C3_load_units.dat",
+  "source_case": "case_RAND7",
+  "fault_code": "C3_load_units",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+  "seed": 4017,
+  "target": {
+    "type": "bus",
+    "num": 7
+  },
+  "field": "P_load,Q_load",
+  "original": {
+    "P": 109.71895861340057,
+    "Q": -8.140276339623224
+  },
+  "corrupted": {
+    "P": 1.0972,
+    "Q": -0.0814
+  },
+  "factor": 0.01
+}

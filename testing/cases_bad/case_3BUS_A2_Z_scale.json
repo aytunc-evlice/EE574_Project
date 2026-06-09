@@ -1,0 +1,24 @@
+{
+  "file": "case_3BUS_A2_Z_scale.dat",
+  "source_case": "case_3BUS",
+  "fault_code": "A2_Z_scale",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+  "seed": 10,
+  "target": {
+    "type": "branch",
+    "from": 2,
+    "to": 3
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.04,
+    "X": 0.12
+  },
+  "corrupted": {
+    "R": 0.4,
+    "X": 1.2
+  },
+  "factor": 10
+}

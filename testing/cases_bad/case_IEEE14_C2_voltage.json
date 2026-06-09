@@ -1,0 +1,16 @@
+{
+  "file": "case_IEEE14_C2_voltage.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "C2_voltage",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+  "seed": 2016,
+  "target": {
+    "type": "bus",
+    "num": 4
+  },
+  "field": "V",
+  "original": 1.012,
+  "corrupted": 1.45
+}

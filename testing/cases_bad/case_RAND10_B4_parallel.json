@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND10_B4_parallel.dat",
+  "source_case": "case_RAND10",
+  "fault_code": "B4_parallel",
+  "category": "B-topology",
+  "severity": "moderate",
+  "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+  "seed": 5014,
+  "target": {
+    "type": "branch",
+    "from": 6,
+    "to": 7
+  },
+  "field": "branch",
+  "original": "1 circuit",
+  "corrupted": "2 (duplicated)"
+}

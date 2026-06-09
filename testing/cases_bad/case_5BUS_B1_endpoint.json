@@ -1,0 +1,17 @@
+{
+  "file": "case_5BUS_B1_endpoint.dat",
+  "source_case": "case_5BUS",
+  "fault_code": "B1_endpoint",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; branch connects wrong bus; Ybus topology wrong",
+  "seed": 1011,
+  "target": {
+    "type": "branch",
+    "from": 1,
+    "to": 3
+  },
+  "field": "to_bus",
+  "original": 3,
+  "corrupted": 4
+}

@@ -1,0 +1,24 @@
+{
+  "file": "case_IEEE14_A2_Z_scale.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "A2_Z_scale",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+  "seed": 2010,
+  "target": {
+    "type": "branch",
+    "from": 9,
+    "to": 10
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.0,
+    "X": 0.11
+  },
+  "corrupted": {
+    "R": 0.0,
+    "X": 1.1
+  },
+  "factor": 10
+}

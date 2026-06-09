@@ -1,0 +1,17 @@
+{
+  "file": "case_3BUS_B4_parallel.dat",
+  "source_case": "case_3BUS",
+  "fault_code": "B4_parallel",
+  "category": "B-topology",
+  "severity": "moderate",
+  "expected_manifestation": "parses OK; duplicated branch halves effective impedance",
+  "seed": 14,
+  "target": {
+    "type": "branch",
+    "from": 1,
+    "to": 2
+  },
+  "field": "branch",
+  "original": "1 circuit",
+  "corrupted": "2 (duplicated)"
+}

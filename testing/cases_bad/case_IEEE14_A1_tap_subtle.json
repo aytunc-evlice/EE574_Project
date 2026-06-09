@@ -1,0 +1,17 @@
+{
+  "file": "case_IEEE14_A1_tap_subtle.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "A1_tap_subtle",
+  "category": "A-branch-parameter",
+  "severity": "subtle",
+  "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+  "seed": 2007,
+  "target": {
+    "type": "branch",
+    "from": 6,
+    "to": 10
+  },
+  "field": "tap",
+  "original": 0.969,
+  "corrupted": 0.949
+}

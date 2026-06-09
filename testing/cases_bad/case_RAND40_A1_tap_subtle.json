@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND40_A1_tap_subtle.dat",
+  "source_case": "case_RAND40",
+  "fault_code": "A1_tap_subtle",
+  "category": "A-branch-parameter",
+  "severity": "subtle",
+  "expected_manifestation": "parses OK; Ybus slightly altered; near-undetectable parameter error",
+  "seed": 7007,
+  "target": {
+    "type": "branch",
+    "from": 12,
+    "to": 32
+  },
+  "field": "tap",
+  "original": 0.9629958904650499,
+  "corrupted": 0.943
+}

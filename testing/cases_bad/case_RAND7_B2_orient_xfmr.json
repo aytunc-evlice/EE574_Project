@@ -1,0 +1,17 @@
+{
+  "file": "case_RAND7_B2_orient_xfmr.dat",
+  "source_case": "case_RAND7",
+  "fault_code": "B2_orient_xfmr",
+  "category": "B-topology",
+  "severity": "subtle",
+  "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+  "seed": 4012,
+  "target": {
+    "type": "branch",
+    "from": 5,
+    "to": 6
+  },
+  "field": "orientation",
+  "original": "5->6",
+  "corrupted": "6->5"
+}

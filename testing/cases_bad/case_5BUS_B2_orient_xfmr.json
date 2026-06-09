@@ -1,0 +1,17 @@
+{
+  "file": "case_5BUS_B2_orient_xfmr.dat",
+  "source_case": "case_5BUS",
+  "fault_code": "B2_orient_xfmr",
+  "category": "B-topology",
+  "severity": "subtle",
+  "expected_manifestation": "parses OK; transformer tap on wrong side; subtle asymmetry",
+  "seed": 1012,
+  "target": {
+    "type": "branch",
+    "from": 2,
+    "to": 4
+  },
+  "field": "orientation",
+  "original": "2->4",
+  "corrupted": "4->2"
+}

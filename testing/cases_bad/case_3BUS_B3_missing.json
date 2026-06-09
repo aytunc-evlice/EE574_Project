@@ -1,0 +1,17 @@
+{
+  "file": "case_3BUS_B3_missing.dat",
+  "source_case": "case_3BUS",
+  "fault_code": "B3_missing",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+  "seed": 13,
+  "target": {
+    "type": "branch",
+    "from": 2,
+    "to": 3
+  },
+  "field": "branch",
+  "original": "present",
+  "corrupted": "deleted"
+}

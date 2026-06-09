@@ -1,0 +1,17 @@
+{
+  "file": "case_IEEE14_A1_tap_gross.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "A1_tap_gross",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; Ybus altered; large reactive/voltage error",
+  "seed": 2008,
+  "target": {
+    "type": "branch",
+    "from": 4,
+    "to": 12
+  },
+  "field": "tap",
+  "original": 0.932,
+  "corrupted": 0.7456
+}

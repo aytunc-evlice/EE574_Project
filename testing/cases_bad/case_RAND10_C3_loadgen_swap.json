@@ -1,0 +1,26 @@
+{
+  "file": "case_RAND10_C3_loadgen_swap.dat",
+  "source_case": "case_RAND10",
+  "fault_code": "C3_loadgen_swap",
+  "category": "C-bus-data",
+  "severity": "moderate",
+  "expected_manifestation": "parses OK; load and generation swapped at a bus",
+  "seed": 5018,
+  "target": {
+    "type": "bus",
+    "num": 6
+  },
+  "field": "load<->gen",
+  "original": {
+    "P_load": 48.04438332116809,
+    "Q_load": -44.990542847666276,
+    "P_gen": 0.0,
+    "Q_gen": 0.0
+  },
+  "corrupted": {
+    "P_load": 0.0,
+    "Q_load": 0.0,
+    "P_gen": 48.04438332116809,
+    "Q_gen": -44.990542847666276
+  }
+}

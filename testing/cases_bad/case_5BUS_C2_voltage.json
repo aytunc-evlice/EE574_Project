@@ -1,0 +1,16 @@
+{
+  "file": "case_5BUS_C2_voltage.dat",
+  "source_case": "case_5BUS",
+  "fault_code": "C2_voltage",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+  "seed": 1016,
+  "target": {
+    "type": "bus",
+    "num": 4
+  },
+  "field": "V",
+  "original": 1.01,
+  "corrupted": 1.45
+}

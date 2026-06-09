@@ -1,0 +1,16 @@
+{
+  "file": "case_RAND4_C2_voltage.dat",
+  "source_case": "case_RAND4",
+  "fault_code": "C2_voltage",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; implausible bus voltage (out of band)",
+  "seed": 3016,
+  "target": {
+    "type": "bus",
+    "num": 4
+  },
+  "field": "V",
+  "original": 0.9653026128070588,
+  "corrupted": 1.45
+}

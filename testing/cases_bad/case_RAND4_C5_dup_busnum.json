@@ -1,0 +1,16 @@
+{
+  "file": "case_RAND4_C5_dup_busnum.dat",
+  "source_case": "case_RAND4",
+  "fault_code": "C5_dup_busnum",
+  "category": "C-bus-data",
+  "severity": "invalid",
+  "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+  "seed": 3020,
+  "target": {
+    "type": "bus",
+    "num": 3
+  },
+  "field": "num",
+  "original": 3,
+  "corrupted": 2
+}

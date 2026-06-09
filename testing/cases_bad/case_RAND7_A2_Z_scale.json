@@ -1,0 +1,24 @@
+{
+  "file": "case_RAND7_A2_Z_scale.dat",
+  "source_case": "case_RAND7",
+  "fault_code": "A2_Z_scale",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; impedance 10x; branch looks far weaker/stronger",
+  "seed": 4010,
+  "target": {
+    "type": "branch",
+    "from": 2,
+    "to": 5
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.014995849077362202,
+    "X": 0.044661019881186134
+  },
+  "corrupted": {
+    "R": 0.149958,
+    "X": 0.44661
+  },
+  "factor": 10
+}

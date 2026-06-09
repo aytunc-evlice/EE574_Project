@@ -1,0 +1,16 @@
+{
+  "file": "case_IEEE14_C1_type_flip.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "C1_type_flip",
+  "category": "C-bus-data",
+  "severity": "moderate",
+  "expected_manifestation": "parses OK; PV bus modeled as PQ; voltage support lost",
+  "seed": 2015,
+  "target": {
+    "type": "bus",
+    "num": 11
+  },
+  "field": "type",
+  "original": 2,
+  "corrupted": 0
+}

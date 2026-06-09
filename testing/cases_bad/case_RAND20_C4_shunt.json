@@ -1,0 +1,16 @@
+{
+  "file": "case_RAND20_C4_shunt.dat",
+  "source_case": "case_RAND20",
+  "fault_code": "C4_shunt",
+  "category": "C-bus-data",
+  "severity": "subtle",
+  "expected_manifestation": "parses OK; wrong shunt susceptance; reactive error",
+  "seed": 6019,
+  "target": {
+    "type": "bus",
+    "num": 16
+  },
+  "field": "B_sh",
+  "original": 0.0,
+  "corrupted": 0.3
+}

@@ -1,0 +1,23 @@
+{
+  "file": "case_5BUS_C3_load_units.dat",
+  "source_case": "case_5BUS",
+  "fault_code": "C3_load_units",
+  "category": "C-bus-data",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; load 100x too small (pu typed in MW field); power balance broken",
+  "seed": 1017,
+  "target": {
+    "type": "bus",
+    "num": 4
+  },
+  "field": "P_load,Q_load",
+  "original": {
+    "P": 129.3333320303301,
+    "Q": 46.67854006400941
+  },
+  "corrupted": {
+    "P": 1.2933,
+    "Q": 0.4668
+  },
+  "factor": 0.01
+}

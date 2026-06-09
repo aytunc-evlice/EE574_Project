@@ -1,0 +1,23 @@
+{
+  "file": "case_RAND10_A2_Z_swap.dat",
+  "source_case": "case_RAND10",
+  "fault_code": "A2_Z_swap",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+  "seed": 5009,
+  "target": {
+    "type": "branch",
+    "from": 1,
+    "to": 5
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.05442547254669613,
+    "X": 0.16041431298415165
+  },
+  "corrupted": {
+    "R": 0.16041431298415165,
+    "X": 0.05442547254669613
+  }
+}

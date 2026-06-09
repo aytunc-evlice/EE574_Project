@@ -1,0 +1,17 @@
+{
+  "file": "case_IEEE14_B3_missing.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "B3_missing",
+  "category": "B-topology",
+  "severity": "gross",
+  "expected_manifestation": "parses OK with fewer branches; flows rerouted / possible island",
+  "seed": 2013,
+  "target": {
+    "type": "branch",
+    "from": 6,
+    "to": 7
+  },
+  "field": "branch",
+  "original": "present",
+  "corrupted": "deleted"
+}

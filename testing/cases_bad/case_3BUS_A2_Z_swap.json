@@ -1,0 +1,23 @@
+{
+  "file": "case_3BUS_A2_Z_swap.dat",
+  "source_case": "case_3BUS",
+  "fault_code": "A2_Z_swap",
+  "category": "A-branch-parameter",
+  "severity": "gross",
+  "expected_manifestation": "parses OK; series R/X transposed; wrong flows",
+  "seed": 9,
+  "target": {
+    "type": "branch",
+    "from": 1,
+    "to": 3
+  },
+  "field": "R,X",
+  "original": {
+    "R": 0.05,
+    "X": 0.16
+  },
+  "corrupted": {
+    "R": 0.16,
+    "X": 0.05
+  }
+}

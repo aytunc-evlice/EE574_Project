@@ -1,0 +1,16 @@
+{
+  "file": "case_IEEE14_C5_dup_busnum.dat",
+  "source_case": "case_IEEE14",
+  "fault_code": "C5_dup_busnum",
+  "category": "C-bus-data",
+  "severity": "invalid",
+  "expected_manifestation": "duplicate bus number; bus index collision (parser keeps last)",
+  "seed": 2020,
+  "target": {
+    "type": "bus",
+    "num": 7
+  },
+  "field": "num",
+  "original": 7,
+  "corrupted": 1
+}

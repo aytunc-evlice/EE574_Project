@@ -332,12 +332,25 @@ class App(tk.Tk):
         obs2, rank2 = observability_report(net, synth_full)
 
         # 3. Scenario 1 ────────────────────────────────────────────────────────
+        bd1_suspects = []
+        r_n1 = None
         if orig_meas:
             print(f'\n[3] Scenario 1 — Original SCADA  '
                   f'(rank {rank1}/{net.n_states})')
             x1, conv1, iters1, _, J1 = wls_estimate(
                 net, orig_meas, verbose=True, use_loadflow_start=True)
             rmse1_V, _ = compare_with_loadflow(net, x1, label='Scenario 1')
+            print(f'\n    Bad data check on original measurements'
+                  f'{" (system unobservable — residuals for unobservable buses unreliable)" if not obs1 else ""}:')
+            try:
+                _, r_n1, _ = compute_normalized_residuals(net, orig_meas, x1)
+                bd1_suspects = bad_data_report(net, orig_meas, x1)
+                if bd1_suspects:
+                    print(f'    {len(bd1_suspects)} measurement(s) flagged (|r̄| > 3.0)')
+                else:
+                    print(f'    No measurements flagged.')
+            except Exception as e:
+                print(f'    BD check failed: {e}')
         else:
             print('\n[3] Scenario 1: SKIPPED (no measurement file)')
             x1, conv1, iters1, J1, rmse1_V = None, False, 0, 0.0, None
@@ -349,11 +362,14 @@ class App(tk.Tk):
             net, synth_full, verbose=True, use_loadflow_start=True)
         rmse2_V, rmse2_th = (None, None)
         r_n2 = None
+        bd2_count = 0
         if conv2:
             rmse2_V, rmse2_th = compare_with_loadflow(net, x2, label='Scenario 2')
             _, r_n2, _ = compute_normalized_residuals(net, synth_full, x2)
-            flagged = sum(1 for r in r_n2 if abs(r) > 3.0)
-            print(f'    Measurements exceeding threshold 3.0: {flagged}')
+            bd2_suspects = bad_data_report(net, synth_full, x2)
+            bd2_count = len(bd2_suspects)
+            print(f'    Bad data check (|r̄| > 3.0): {bd2_count} measurement(s) flagged  '
+                  f'{"✓ none" if bd2_count == 0 else "⚠ see residuals tab"}')
 
         # 5. Scenario 3 ────────────────────────────────────────────────────────
         print('\n[5] Scenario 3 — Injected gross error + bad data detection')
@@ -390,6 +406,8 @@ class App(tk.Tk):
             x3=x3, conv3=conv3, iters3=iters3, J3=J3,
             synth_full=synth_full, s3_meas=s3_meas,
             r_n2=r_n2, r_n3=r_n3,
+            bd1_suspects=bd1_suspects, r_n1=r_n1,
+            bd2_count=bd2_count,
             bd_detected=bd_detected, bd_correct=bd_correct, bad_m=bad_m,
         )
         print('\nPipeline complete.')
@@ -420,14 +438,23 @@ class App(tk.Tk):
             return format(v, fmt_str) if v is not None else '—'
 
         if res['orig_meas']:
+            bd1 = res.get('bd1_suspects', [])
+            unobs = not res['obs1']
+            if not res['conv1']:
+                bd1_str = 'N/A (no conv)'
+            elif bd1:
+                bd1_str = f'{len(bd1)} flagged' + (' *' if unobs else '')
+            else:
+                bd1_str = 'NONE' + (' *' if unobs else ' ✓')
             self._sc_tree.insert('', 'end', values=(
                 'Sc1: Original SCADA',
                 len(res['orig_meas']),
                 f'{res["rank1"]}/{net.n_states}',
                 'YES' if res['conv1'] else 'NO',
-                res['iters1'], fmt(res['J1']), '—', 'N/A',
+                res['iters1'], fmt(res['J1']), '—', bd1_str,
             ))
 
+        bd2 = res.get('bd2_count', 0)
         self._sc_tree.insert('', 'end', values=(
             'Sc2: Synthetic SCADA + PMU (clean)',
             len(res['synth_full']),
@@ -436,7 +463,7 @@ class App(tk.Tk):
             res['iters2'],
             fmt(res['J2']) if res['conv2'] else '—',
             fmt(res['rmse2_V'], '.5f') if res['rmse2_V'] else '—',
-            '—',
+            f'NONE ✓' if bd2 == 0 else f'{bd2} flagged',
         ))
         self._sc_tree.insert('', 'end', values=(
             'Sc3: Bad data injected',
@@ -523,6 +550,9 @@ class App(tk.Tk):
 
         res = self._results
         plots = []
+        if res.get('r_n1') is not None:
+            label = 'Sc1: Original SCADA' + (' (unobs *)' if not res.get('obs1') else '')
+            plots.append((label, res['r_n1'], '#7BAFD4'))
         if res.get('r_n2') is not None:
             plots.append(('Sc2: Clean SCADA + PMU',  res['r_n2'], GREEN))
         if res.get('r_n3') is not None:

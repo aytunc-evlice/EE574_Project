@@ -6,3 +6,10 @@ __pycache__/
 
 # Generated measurement streams (reproducible via gen_measurements.py / inject_bad_data.py)
 results/timeseries/
+submission/results/
+
+# Office temp/lock files
+~$*
+
+# QA thumbnails (regenerable)
+poster_build/figures/_qa/

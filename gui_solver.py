@@ -236,9 +236,13 @@ class SolverApp(tk.Tk):
         ctl.columnconfigure(1, weight=1)
 
         # status + progress
-        self._status = ttk.Label(self,
-                                 text='Select a stream folder and solve.',
-                                 style='Sub.TLabel')
+        if os.path.isfile(os.path.join(self._dir.get(), 'index.csv')):
+            hint = 'Select a stream folder and solve.'
+        else:
+            hint = ('No generated stream found - run  "python '
+                    'gen_measurements.py --cdf <case.dat>"  first, then '
+                    'Browse to its output folder (contains index.csv).')
+        self._status = ttk.Label(self, text=hint, style='Sub.TLabel')
         self._status.pack(fill='x', padx=16)
         self._prog = ttk.Progressbar(self, mode='determinate', length=300)
         self._prog.pack(fill='x', padx=16, pady=2)
@@ -367,8 +371,12 @@ class SolverApp(tk.Tk):
 
     # ── browse / solve ────────────────────────────────────────────────────────
     def _browse(self):
-        p = filedialog.askdirectory(title='Select a measurement data folder',
-                                    initialdir=self._dir.get())
+        init = self._dir.get()
+        while init and not os.path.isdir(init):
+            init = os.path.dirname(init.rstrip('/\\'))
+        p = filedialog.askdirectory(title='Select a measurement data folder '
+                                          '(the one containing index.csv)',
+                                    initialdir=init or DATA_DIR)
         if p:
             self._dir.set(p)
             self._prefill_from_manifest(p)

@@ -201,7 +201,8 @@ class Network:
                         d   = theta[i] - theta[j]
                         c   = ang_col(j)
                         if c >= 0:
-                            H[row, c] += Vi * V[j] * (-G[i, j] * np.sin(d) + B[i, j] * np.cos(d))
+                            # dP_i/dtheta_j = V_i V_j (G_ij sin d - B_ij cos d)
+                            H[row, c] += Vi * V[j] * (G[i, j] * np.sin(d) - B[i, j] * np.cos(d))
                         H[row, vol_col(j)] += Vi * (G[i, j] * np.cos(d) + B[i, j] * np.sin(d))
                     c = ang_col(i)
                     if c >= 0:

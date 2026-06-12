@@ -13,3 +13,6 @@ submission/results/
 
 # QA thumbnails (regenerable)
 poster_build/figures/_qa/
+
+# Root-level generated streams (GUI 'Generate stream' output)
+/streams/

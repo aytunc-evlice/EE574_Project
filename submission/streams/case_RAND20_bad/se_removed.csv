@@ -1,0 +1,21 @@
+t_sec,type,label,r_n,value,was_actually_bad
+0.000,Qflow,Qflow(14-17),-242.147,-4.77334,True
+0.000,Qinj,Qinj(bus 6),-87.966,-2.22721,True
+5.000,Pflow,Pflow(1-8),2626.779,49.94166,True
+5.000,Qflow,Qflow(14-17),-244.351,-4.80130,True
+10.000,Qflow,Qflow(14-17),-250.880,-4.92190,True
+15.000,Qflow,Qflow(14-17),-244.617,-4.79561,True
+20.000,Qflow,Qflow(14-17),-228.854,-4.47837,True
+25.000,Qflow,Qflow(14-17),-294.559,-5.83572,True
+30.000,Vang,Vang(bus 5),18421.736,2.59577,True
+30.000,Vmag,Vmag(bus 17),1392.012,13.84189,True
+30.000,Qflow,Qflow(14-17),-233.560,-4.60062,True
+35.000,Qflow,Qflow(1-6),231.252,4.64012,True
+35.000,Qflow,Qflow(14-17),-209.723,-4.12559,True
+40.000,Qflow,Qflow(14-17),-152.490,-2.96821,True
+40.000,Pflow,Pflow(12-16),-75.794,-1.20665,True
+45.000,Qflow,Qflow(14-17),-177.205,-3.47854,True
+50.000,Qflow,Qflow(14-17),-180.273,-3.53872,True
+55.000,Vmag,Vmag(bus 1),1678.530,17.00161,True
+55.000,Qflow,Qflow(14-17),-194.768,-3.82422,True
+60.000,Qflow,Qflow(14-17),-220.558,-4.33195,True

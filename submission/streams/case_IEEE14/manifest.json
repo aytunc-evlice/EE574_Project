@@ -1,0 +1,51 @@
+{
+  "case": "ieee_cdf_sample",
+  "cdf_file": "ieee_cdf_sample.dat",
+  "mva_base": 100.0,
+  "n_buses": 14,
+  "n_branches": 17,
+  "slack_bus": 1,
+  "pmu_buses": [
+    2,
+    5,
+    9,
+    10,
+    12,
+    14
+  ],
+  "horizon_s": 60.0,
+  "pmu_dt_s": 1.0,
+  "scada_dt_s": 5.0,
+  "seed": 42,
+  "sigma_ranges": {
+    "scada_vmag": [
+      0.008,
+      0.012
+    ],
+    "scada_pq": [
+      0.015,
+      0.025
+    ],
+    "pmu_v": [
+      5e-05,
+      0.0002
+    ],
+    "pmu_i": [
+      0.0001,
+      0.0005
+    ]
+  },
+  "inj_buses": "gen",
+  "loads_in_pu": false,
+  "pmu_current": true,
+  "drop_pmu_prob": 0.0,
+  "profile": {
+    "diurnal_amp": 0.12,
+    "period_s": 60.0
+  },
+  "n_pmu_snapshots": 61,
+  "n_scada_snapshots": 13,
+  "n_scada_channels": 60,
+  "n_pmu_channels": 36,
+  "pf_non_converged": 0
+}

@@ -1,0 +1,58 @@
+{
+  "case": "case_RAND40",
+  "cdf_file": "C:\\Users\\aytu_\\Desktop\\GitHub\\EE574_Project\\submission\\cases\\case_RAND40.dat",
+  "mva_base": 100.0,
+  "n_buses": 40,
+  "n_branches": 52,
+  "slack_bus": 1,
+  "pmu_buses": [
+    2,
+    5,
+    8,
+    11,
+    14,
+    17,
+    20,
+    23,
+    26,
+    29,
+    32,
+    35,
+    38
+  ],
+  "horizon_s": 60.0,
+  "pmu_dt_s": 1.0,
+  "scada_dt_s": 5.0,
+  "seed": 42,
+  "sigma_ranges": {
+    "scada_vmag": [
+      0.008,
+      0.012
+    ],
+    "scada_pq": [
+      0.015,
+      0.025
+    ],
+    "pmu_v": [
+      5e-05,
+      0.0002
+    ],
+    "pmu_i": [
+      0.0001,
+      0.0005
+    ]
+  },
+  "inj_buses": "gen",
+  "loads_in_pu": false,
+  "pmu_current": true,
+  "drop_pmu_prob": 0.0,
+  "profile": {
+    "diurnal_amp": 0.12,
+    "period_s": 60.0
+  },
+  "n_pmu_snapshots": 61,
+  "n_scada_snapshots": 13,
+  "n_scada_channels": 166,
+  "n_pmu_channels": 96,
+  "pf_non_converged": 0
+}

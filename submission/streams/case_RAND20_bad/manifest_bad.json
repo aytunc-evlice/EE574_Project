@@ -1,0 +1,47 @@
+{
+  "source_dir": "streams/case_RAND20",
+  "max_bad_per_file": 2,
+  "n_persistent_per_stream": 1,
+  "scale_range": [
+    10.0,
+    30.0
+  ],
+  "negate_prob": 0.5,
+  "min_sigma": 10.0,
+  "scope": "both",
+  "seed": 7,
+  "persistent_meters": {
+    "scada": [
+      {
+        "type": "Qflow",
+        "loc1": 14,
+        "loc2": 17,
+        "sigma": 0.02042696,
+        "style": "scale",
+        "factor": -23.6925784790755
+      }
+    ],
+    "pmu": [
+      {
+        "type": "Imag",
+        "loc1": 14,
+        "loc2": 20,
+        "sigma": 0.0004272059,
+        "style": "scale",
+        "factor": -28.782227074643707
+      }
+    ]
+  },
+  "n_bad_total": 102,
+  "n_files_with_bad": 74,
+  "n_files_total": 74,
+  "bad_by_type": {
+    "Imag": 69,
+    "Qflow": 14,
+    "Qinj": 1,
+    "Vmag": 5,
+    "Pflow": 2,
+    "Vang": 5,
+    "Iang": 6
+  }
+}

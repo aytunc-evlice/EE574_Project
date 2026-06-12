@@ -1,0 +1,47 @@
+{
+  "source_dir": "C:\\Users\\aytu_\\Desktop\\GitHub\\EE574_Project\\submission\\streams\\case_RAND40",
+  "max_bad_per_file": 2,
+  "n_persistent_per_stream": 1,
+  "scale_range": [
+    10.0,
+    30.0
+  ],
+  "negate_prob": 0.5,
+  "min_sigma": 10.0,
+  "scope": "both",
+  "seed": 42,
+  "persistent_meters": {
+    "scada": [
+      {
+        "type": "Pflow",
+        "loc1": 2,
+        "loc2": 21,
+        "sigma": 0.01531429,
+        "style": "scale",
+        "factor": 14.368808744336672
+      }
+    ],
+    "pmu": [
+      {
+        "type": "Imag",
+        "loc1": 26,
+        "loc2": 31,
+        "sigma": 0.0001780972,
+        "style": "negate",
+        "factor": -1.0
+      }
+    ]
+  },
+  "n_bad_total": 113,
+  "n_files_with_bad": 74,
+  "n_files_total": 74,
+  "bad_by_type": {
+    "Imag": 72,
+    "Iang": 11,
+    "Pflow": 16,
+    "Vang": 4,
+    "Qflow": 2,
+    "Vmag": 7,
+    "Qinj": 1
+  }
+}

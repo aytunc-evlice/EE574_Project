@@ -42,6 +42,9 @@ No other setup is needed — every command below is run **from this folder**.
 | `cases/case_IEEE14.dat` | IEEE 14-bus CDF test case |
 | `cases/case_RAND20.dat` | Randomized 20-bus CDF test case |
 | `cases/case_RAND40.dat` | Randomized 40-bus CDF test case |
+| `streams/case_IEEE14[_bad]` | Pre-generated 60 s measurement streams (SCADA 5 s + PMU 1 s) for the IEEE 14-bus case — clean and with injected gross errors |
+| `streams/case_RAND20[_bad]` | Pre-generated streams for the 20-bus case |
+| `streams/case_RAND40[_bad]` | Pre-generated streams for the 40-bus case |
 | `read_me_ieee_cdf.txt` | IEEE CDF file-format reference |
 | `read_me_meas.txt` | Measurement file-format reference |
 
@@ -105,29 +108,36 @@ shown in the tabs.
 ## 4. Time-series operation (moving system state)
 
 The estimator can track a time-varying state, fusing PMU phasors (1 s) with
-SCADA scans (5 s) exactly like an EMS.
+SCADA scans (5 s) exactly like an EMS. Ready-made streams for the 14-, 20-
+and 40-bus cases ship in `streams/` (each with a `_bad` twin containing
+injected gross errors), so the GUI works out of the box:
 
 ```
-# 1. generate a 60 s measurement stream (IEEE-14, PMUs at 2,5,9,10,12,14)
-python gen_measurements.py --cdf cases/case_IEEE14.dat --out results/timeseries/case_IEEE14
-
-# 2. (optional) inject gross errors into a copy of the stream
-python inject_bad_data.py --dir results/timeseries/case_IEEE14
-
-# 3. solve across the stream — prints RMSE and bad-data report, saves tracking plot
-python solve_timeseries.py --dir results/timeseries/case_IEEE14
-python solve_timeseries.py --dir results/timeseries/case_IEEE14_bad
-
-# 4. or explore the stream interactively
 python gui_solver.py
 ```
 
-`gui_solver.py` opens on the most recent generated stream (use **Browse** to
-pick another). It shows the network one-line diagram, the estimated state and
-bad data table, and the normalized-residual chart with a time slider.
+It opens on `streams/case_IEEE14` — press **Solve**. The clean stream and its
+`_bad` twin are both solved; toggle **Clean / Bad**, use the time slider, and
+inspect the network diagram, the estimated state & bad data table, and the
+normalized-residual chart. **Browse** to `streams/case_RAND20` or
+`streams/case_RAND40` for the larger cases.
 
-The same works for the 20- and 40-bus cases, e.g.
-`python gen_measurements.py --cdf cases/case_RAND40.dat --out results/timeseries/case_RAND40`.
+To run on a *different* network: select its CDF with the **CDF file → Browse**
+button and press **Generate stream** — a fresh 60 s stream is generated into
+`streams/<case>` and solved automatically.
+
+The same is available from the command line:
+
+```
+# generate a stream (output goes to streams/<case name>)
+python gen_measurements.py --cdf cases/case_RAND40.dat --out streams/case_RAND40
+
+# inject gross errors into a copy of the stream (creates streams/case_RAND40_bad)
+python inject_bad_data.py --dir streams/case_RAND40
+
+# solve across a stream — prints RMSE and bad-data report, saves tracking plot
+python solve_timeseries.py --dir streams/case_RAND40_bad
+```
 
 ---
 

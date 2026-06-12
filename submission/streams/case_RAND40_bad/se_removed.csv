@@ -1,0 +1,24 @@
+t_sec,type,label,r_n,value,was_actually_bad
+0.000,Pflow,Pflow(2-21),690.122,-11.36343,True
+5.000,Vang,Vang(bus 35),18324.437,-1.65389,True
+5.000,Pflow,Pflow(2-21),744.430,-12.17598,True
+5.000,Pflow,Pflow(15-28),-142.099,-2.26626,True
+10.000,Pflow,Pflow(2-21),747.190,-12.29855,True
+10.000,Qflow,Qflow(4-8),-14.804,-0.20812,True
+15.000,Vmag,Vmag(bus 12),1245.592,15.83949,True
+15.000,Pflow,Pflow(2-21),780.438,-12.84442,True
+20.000,Pflow,Pflow(2-21),742.564,-12.27226,True
+25.000,Pflow,Pflow(2-21),725.741,-11.94781,True
+30.000,Pflow,Pflow(2-21),696.350,-11.50022,True
+35.000,Vmag,Vmag(bus 26),1799.109,21.01840,True
+35.000,Pflow,Pflow(2-21),650.189,-10.72761,True
+40.000,Pflow,Pflow(12-32),940.711,-15.94410,True
+40.000,Pflow,Pflow(2-21),591.650,-9.81706,True
+45.000,Vmag,Vmag(bus 38),454533.587,30.11516,True
+45.000,Pflow,Pflow(2-21),602.770,-9.97943,True
+45.000,Pflow,Pflow(12-20),336.176,5.40065,True
+50.000,Vmag,Vmag(bus 10),886.044,10.61762,True
+50.000,Pflow,Pflow(2-21),593.650,-9.84565,True
+55.000,Pflow,Pflow(2-21),655.808,-10.76640,True
+60.000,Pflow,Pflow(2-21),711.195,-11.61848,True
+60.000,Qflow,Qflow(8-16),-84.688,-2.01712,True

@@ -36,15 +36,18 @@ DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def default_stream_dir():
-    base = os.path.join(DATA_DIR, 'results', 'timeseries')
-    cands = [os.path.join(base, 'case_IEEE14')]
-    if os.path.isdir(base):
-        cands += [os.path.join(base, n) for n in sorted(os.listdir(base))
-                  if not n.endswith('_bad')]
+    bases = [os.path.join(DATA_DIR, 'streams'),
+             os.path.join(DATA_DIR, 'results', 'timeseries')]
+    cands = []
+    for base in bases:
+        cands.append(os.path.join(base, 'case_IEEE14'))
+        if os.path.isdir(base):
+            cands += [os.path.join(base, n) for n in sorted(os.listdir(base))
+                      if not n.endswith('_bad')]
     for c in cands:
         if os.path.isfile(os.path.join(c, 'index.csv')):
             return c
-    return base
+    return bases[0]
 
 
 # ── palette: white / red ──────────────────────────────────────────────────────
@@ -208,8 +211,9 @@ class SolverApp(tk.Tk):
         self._loads_pu = tk.BooleanVar(value=False)
         ttk.Checkbutton(ctl, text='loads in pu',
                         variable=self._loads_pu).grid(row=1, column=5, sticky='w')
-        ttk.Label(ctl, text='(blank = use folder manifest)',
-                  style='Sub.TLabel').grid(row=1, column=6, sticky='w')
+        self._gen_btn = ttk.Button(ctl, text='Generate stream',
+                                   command=self._generate)
+        self._gen_btn.grid(row=1, column=6, sticky='w', padx=2)
 
         self._use_scada = tk.BooleanVar(value=True)
         self._use_pmu   = tk.BooleanVar(value=True)
@@ -239,9 +243,9 @@ class SolverApp(tk.Tk):
         if os.path.isfile(os.path.join(self._dir.get(), 'index.csv')):
             hint = 'Select a stream folder and solve.'
         else:
-            hint = ('No generated stream found - run  "python '
-                    'gen_measurements.py --cdf <case.dat>"  first, then '
-                    'Browse to its output folder (contains index.csv).')
+            hint = ('No measurement stream found - pick a CDF file and press '
+                    '"Generate stream", or Browse to a folder that contains '
+                    'index.csv.')
         self._status = ttk.Label(self, text=hint, style='Sub.TLabel')
         self._status.pack(fill='x', padx=16)
         self._prog = ttk.Progressbar(self, mode='determinate', length=300)
@@ -387,6 +391,51 @@ class SolverApp(tk.Tk):
             filetypes=[('CDF/DAT files', '*.dat'), ('All files', '*.*')])
         if p:
             self._cdf.set(p)
+
+    def _generate(self):
+        """Generate a fresh measurement stream from the selected CDF file,
+        then solve it."""
+        cdf = self._cdf.get().strip() or os.path.join(DATA_DIR,
+                                                      'ieee_cdf_sample.dat')
+        if not os.path.isfile(cdf):
+            self._set_status(f'CDF file not found: {cdf}', RED)
+            return
+        stem = os.path.splitext(os.path.basename(cdf))[0]
+        out_dir = os.path.join(DATA_DIR, 'streams', stem)
+        self._run_btn.configure(state='disabled')
+        self._gen_btn.configure(state='disabled')
+        self._set_status(f'Generating 60 s measurement stream for {stem}...',
+                         ORANGE)
+        threading.Thread(target=self._gen_worker, args=(cdf, out_dir),
+                         daemon=True).start()
+
+    def _gen_worker(self, cdf, out_dir):
+        old = sys.stdout
+        sys.stdout = _Stdout(lambda t: None)
+        try:
+            import gen_measurements as genm
+            argv, sys.argv = sys.argv, ['gen_measurements.py']
+            args = genm.parse_args()
+            sys.argv = argv
+            args.loads_in_pu = bool(self._loads_pu.get())
+            genm.generate_case(cdf, out_dir, args)
+            self.after(0, lambda: self._on_generated(out_dir))
+        except Exception as exc:
+            import traceback; traceback.print_exc()
+            msg = str(exc)
+            self.after(0, lambda: (
+                self._set_status(f'Generation error: {msg}', RED),
+                self._run_btn.configure(state='normal'),
+                self._gen_btn.configure(state='normal')))
+        finally:
+            sys.stdout = old
+
+    def _on_generated(self, out_dir):
+        self._dir.set(out_dir)
+        self._gen_btn.configure(state='normal')
+        self._run_btn.configure(state='normal')
+        self._set_status('Stream generated - solving...', ORANGE)
+        self._start()
 
     def _prefill_from_manifest(self, d):
         clean_dir, _ = self._twins(d)

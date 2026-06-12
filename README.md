@@ -109,6 +109,109 @@ python run_pipeline.py --all testing/cases_bad/
 
 ---
 
+## Time-Varying Measurement Stream
+
+`gen_measurements.py` generates a realistic **stream of measurements that change
+in time** from any CDF case, matching the project scenario: **PMU phasors every
+1 s, SCADA every 5 s**. The true network state genuinely evolves — the loads are
+scaled by a load profile and the **AC power flow is re-solved at every instant**
+(`src/powerflow.py`, a from-scratch Newton-Raphson solver) — and noisy
+measurements are then sampled from that true state.
+
+```bash
+# Generate a 60 s stream (PMU @1s, SCADA @5s) from the IEEE 14-bus network
+python gen_measurements.py --cdf ieee_cdf_sample.dat --out results/timeseries/demo
+
+# Drive the WLS estimator across the stream and plot it tracking the moving state
+python run_timeseries.py --dir results/timeseries/demo
+```
+
+Each snapshot is written as a standalone file in the **same 8-section format as
+`measure.dat`** (`read_me_meas.txt`), so any single instant is runnable with the
+static pipeline (`python run_pipeline.py --meas <snapshot.dat>`).
+
+**Per-measurement noise model.** Every measurement channel is assigned **its own
+σ once**, drawn from a per-type range, and that σ is **held constant for the
+whole run** (a meter's accuracy class does not drift). Different channels differ
+(`V1` ≠ `V2`, `P12` ≠ `P3`); only the noisy *value* is redrawn each instant. The
+full assignment is saved to `sigmas.csv`. Default ranges:
+
+| Channel | σ range (pu) |
+|---|---|
+| SCADA Vmag | 0.008 – 0.012 |
+| SCADA Pinj/Qinj/Pflow/Qflow | 0.015 – 0.025 |
+| PMU Vmag/Vang | 5e-5 – 2e-4 |
+| PMU Imag/Iang | 1e-4 – 5e-4 |
+
+**Outputs** (under `--out`, default `results/timeseries/<case>/`):
+
+| File | Contents |
+|---|---|
+| `pmu/pmu_t*.dat` | PMU snapshots — Vmag, Vang (+ Imag, Iang current phasors) |
+| `scada/scada_t*.dat` | SCADA snapshots — Vmag, Pinj, Qinj, Pflow, Qflow |
+| `index.csv` | `t_sec, kind, n_meas, lambda, file` for the whole stream |
+| `truth.csv` | ground-truth `V/θ` per timestamp (to score the estimator) |
+| `sigmas.csv` | the frozen per-channel σ assignment |
+| `manifest.json` | full run configuration (cadence, seed, profile, PMU buses) |
+
+**Key options:** `--horizon` (s), `--pmu-dt`, `--scada-dt`, `--seed`,
+`--pmu-buses`, `--inj-buses {gen,all}`, `--drop-pmu-prob` (missing PMU frames),
+`--no-pmu-current`, `--diurnal-amp`, `--loads-in-pu`.
+
+> **Load scaling.** Most cases store Load/Gen columns in **MW** (the
+> `cdf_gen.py`-generated `case_3BUS/5BUS/RAND*` and the genuine
+> `ieee_cdf_sample.dat`); the parser's `÷ MVA base` is correct for them and they
+> come out at realistic `read_me_meas.txt` scale with **no flag**. The exception
+> is **`case_IEEE14.dat`**, whose Load column holds standard IEEE per-unit values
+> (e.g. `0.94`) rather than MW (`94.2`), so it alone needs **`--loads-in-pu`**:
+>
+> ```bash
+> python gen_measurements.py --all testing/cases/                       # 7 cases, MW-correct
+> python gen_measurements.py --cdf testing/cases/case_IEEE14.dat --loads-in-pu   # the pu-labeled one
+> ```
+>
+> Using `--loads-in-pu` on the MW cases would multiply their loads ×100 and the
+> power flow will not converge — apply it only to genuinely per-unit files.
+
+The time-series loader (`src.parser.load_timeseries` / `parse_measurement_file`)
+reads these files positionally so empty sections are handled correctly, and
+`src.parser.fuse` combines the latest SCADA scan with the current PMU frame for
+each estimator update.
+
+---
+
+## Bad-Data Streams
+
+`inject_bad_data.py` takes a clean stream and writes a corrupted **twin** beside
+it (the clean data is never modified), so you have matched clean/bad datasets.
+Each file gets up to `--max-bad` gross errors (default **2** → at most 4 across a
+SCADA + PMU pair at one instant):
+
+- **persistent broken meters** — a fixed channel per stream is biased in *every*
+  file (a miscalibrated/stuck meter);
+- **transient spikes** — extra random channels are corrupted one file at a time.
+
+Every gross error is `sign · m · σ` with `m ∼ U(10, 30)`, scaled to that meter's
+own accuracy. **Exactly which measurements are bad is reported** in `bad_log.csv`.
+
+```bash
+python inject_bad_data.py --dir results/timeseries/case_RAND20   # one case
+python inject_bad_data.py --all results/timeseries               # every clean case
+```
+
+**Outputs** in `results/timeseries/<case>_bad/` — same `pmu/`, `scada/`,
+`index.csv` (now with an `n_bad` column), plus copies of `truth.csv`/`sigmas.csv`:
+
+| File | Contents |
+|---|---|
+| `bad_log.csv` | one row per injected error: `t_sec, kind, file, mode, type, loc1, loc2, sigma, clean_value, bad_value, error, error_sigmas, pos` |
+| `manifest_bad.json` | config + the persistent broken meters + totals |
+
+**Options:** `--max-bad 2`, `--n-persistent 1`, `--sigma-mult 10 30`,
+`--scope {both,scada,pmu}`, `--seed`. Reproducible for a given `(seed, args)`.
+
+---
+
 ## Comparing Results Across Multiple Cases
 
 `compare_cases.py` runs the estimator on every case in a folder and produces

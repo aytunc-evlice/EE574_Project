@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# Claude Code local memory / tooling
+.claude/
+
+# Generated measurement streams (reproducible via gen_measurements.py / inject_bad_data.py)
+results/timeseries/

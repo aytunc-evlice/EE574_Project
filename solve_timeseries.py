@@ -119,7 +119,7 @@ def load_truth(d, nums):
 
 
 def load_badlog(d):
-    """{relative_file: set of SE-relevant bad keys}."""
+    """{relative_file: {key: mode}} for SE-relevant bad measurements."""
     p = os.path.join(d, 'bad_log.csv')
     if not os.path.exists(p):
         return None
@@ -129,7 +129,7 @@ def load_badlog(d):
             continue
         loc2 = r['loc2']
         key = (r['type'], int(r['loc1']), None if loc2 in ('', None) else int(loc2))
-        out.setdefault(r['file'], set()).add(key)
+        out.setdefault(r['file'], {})[key] = r.get('mode', '')
     return out
 
 
@@ -184,6 +184,11 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
     def read(rel):
         return parse_measurement_file(os.path.join(d, *rel.split('/')), vb, bs)
 
+    # aggregate detection breakdown over the whole run
+    det = {'tp': 0, 'fp': 0, 'fn': 0, 'clean_after': 0,
+           'by_type': {}, 'by_mode': {'persistent': [0, 0], 'transient': [0, 0]},
+           'injected_se_total': (sum(len(v) for v in badlog.values()) if badlog else 0)}
+
     results = []
     x_prev = None
     for i, t in enumerate(times):
@@ -218,12 +223,29 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
         actual = set()
         if badlog is not None:
             present = {meas_key(m) for m in meas}
+            actual_modes = {}
             for stream, f in used.items():
-                actual |= (badlog.get(f, set()) & present)
+                for key, mode in badlog.get(f, {}).items():
+                    if key in present:
+                        actual_modes[key] = mode
+            actual = set(actual_modes)
             removed_keys = {r['key'] for r in sol['removed']}
             tp = len(removed_keys & actual)
             fp = len(removed_keys - actual)
             fn = len(actual - removed_keys)
+            # accumulate run-level breakdown
+            det['tp'] += tp; det['fp'] += fp; det['fn'] += fn
+            if not sol['flagged_remaining']:
+                det['clean_after'] += 1
+            for rk in removed_keys:
+                e = det['by_type'].setdefault(rk[0], [0, 0, 0])  # [tp, fp, fn]
+                e[0 if rk in actual else 2] += 1
+            for ak in actual:
+                if ak in removed_keys:
+                    det['by_mode'].setdefault(actual_modes[ak], [0, 0])[0] += 1   # caught
+                else:
+                    det['by_type'].setdefault(ak[0], [0, 0, 0])[1] += 1           # fn
+                    det['by_mode'].setdefault(actual_modes[ak], [0, 0])[1] += 1   # missed
 
         results.append({
             't': t, 'lam': lam.get(t),
@@ -249,8 +271,21 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
         'instants': instants, 'has_truth': truth is not None,
         'has_badlog': badlog is not None,
     }
+
+    detection = None
+    if badlog is not None:
+        tp, fp, fn = det['tp'], det['fp'], det['fn']
+        det['n_actual'] = tp + fn          # bad data evaluated (in solved SE sets)
+        det['n_detected'] = tp + fp        # measurements removed
+        det['recall'] = tp / (tp + fn) if (tp + fn) else 1.0
+        det['precision'] = tp / (tp + fp) if (tp + fp) else 1.0
+        p, rc = det['precision'], det['recall']
+        det['f1'] = 2 * p * rc / (p + rc) if (p + rc) else 0.0
+        det['n_instants'] = len(results)
+        detection = det
+
     return {'net': net, 'nums': nums, 'meta': meta, 'truth': truth,
-            'results': results}
+            'results': results, 'detection': detection}
 
 
 def _lbl(m):
@@ -289,6 +324,22 @@ def write_outputs(d, out):
                 flag = (str(rm['key']) in actual) if has_bl else ''
                 w.writerow([f"{r['t']:.3f}", rm['type'], rm['label'],
                             f"{rm['r_n']:.3f}", f"{rm['value']:.5f}", flag])
+
+    # detection_summary.csv (the complete per-case result)
+    if out['detection']:
+        dd = out['detection']
+        with open(os.path.join(d, 'detection_summary.csv'), 'w', newline='') as f:
+            w = csv.writer(f)
+            w.writerow(['metric', 'value'])
+            for k in ('n_actual', 'tp', 'fn', 'fp', 'precision', 'recall', 'f1',
+                      'clean_after', 'n_instants', 'injected_se_total'):
+                w.writerow([k, dd[k]])
+            w.writerow([]); w.writerow(['by_type', 'TP', 'FN', 'FP'])
+            for t, v in sorted(dd['by_type'].items()):
+                w.writerow([t, v[0], v[1], v[2]])
+            w.writerow([]); w.writerow(['by_mode', 'caught', 'missed'])
+            for mo, v in dd['by_mode'].items():
+                w.writerow([mo, v[0], v[1]])
 
     _plots(d, out)
 
@@ -377,13 +428,30 @@ def main():
         rv = [r['rmse_V'] for r in res if r['rmse_V'] is not None]
         if rv:
             print(f"  mean RMSE_V = {np.mean(rv):.2e} pu")
-    if m['has_badlog']:
-        TP = sum(r['tp'] for r in res); FP = sum(r['fp'] for r in res); FN = sum(r['fn'] for r in res)
-        rec = TP / (TP + FN) if (TP + FN) else 1.0
-        prec = TP / (TP + FP) if (TP + FP) else 1.0
-        print(f"  detection vs bad_log: TP={TP} FP={FP} FN={FN}  "
-              f"recall={rec:.2f} precision={prec:.2f}")
+    if out['detection']:
+        print_detection_report(out)
     write_outputs(args.dir, out)
+
+
+def print_detection_report(out):
+    d = out['detection']; m = out['meta']
+    print(f"\n  === DETECTION SUMMARY  [{m['case']}]  "
+          f"SCADA={m['use_scada']} PMU={m['use_pmu']} cadence={m['instants']} ===")
+    print(f"    bad data evaluated (in solved SE sets): {d['n_actual']}")
+    print(f"    correctly found  (TP): {d['tp']}")
+    print(f"    missed           (FN): {d['fn']}")
+    print(f"    wrongly found    (FP): {d['fp']}")
+    print(f"    precision={d['precision']:.2f}  recall={d['recall']:.2f}  F1={d['f1']:.2f}")
+    print(f"    instants clean after SE: {d['clean_after']}/{d['n_instants']}")
+    pm = d['by_mode']
+    print(f"    by mode:  persistent caught {pm['persistent'][0]}/{sum(pm['persistent'])}"
+          f"   |   transient caught {pm['transient'][0]}/{sum(pm['transient'])}")
+    if d['by_type']:
+        print("    by type:  " + "   ".join(
+            f"{t}[TP{v[0]} FN{v[1]} FP{v[2]}]" for t, v in sorted(d['by_type'].items())))
+    if d['injected_se_total'] > d['n_actual']:
+        print(f"    note: {d['injected_se_total']} SE-type bad injected over the full stream; "
+              f"{d['n_actual']} fell on instants solved at this cadence")
 
 
 if __name__ == '__main__':

@@ -166,7 +166,8 @@ class SolverApp(tk.Tk):
         self._nb = nb
         self._net_tab = ttk.Frame(nb); nb.add(self._net_tab, text=' Network ')
         self._build_state_tab(nb)
-        self._track_tab = ttk.Frame(nb); nb.add(self._track_tab, text=' Tracking / Detection ')
+        self._track_tab = ttk.Frame(nb); nb.add(self._track_tab, text=' Tracking ')
+        self._sum_tab = ttk.Frame(nb); nb.add(self._sum_tab, text=' Detection Summary ')
         cf = ttk.Frame(nb); nb.add(cf, text=' Console ')
         self._console = scrolledtext.ScrolledText(cf, state='disabled', bg=CONSOLE, fg='#B8D0F0',
                                                    font=('Consolas', 9), relief='flat')
@@ -329,6 +330,7 @@ class SolverApp(tk.Tk):
         n = len(self.out['results'])
         self._slider.configure(from_=0, to=n - 1)
         self._draw_tracking()
+        self._draw_summary()
         i = min(int(self._slider.get()), n - 1)
         self._show_instant(i)
 
@@ -517,6 +519,60 @@ class SolverApp(tk.Tk):
         fig.tight_layout()
         c = FigureCanvasTkAgg(fig, master=self._track_tab); c.draw()
         c.get_tk_widget().pack(fill='both', expand=True)
+
+    def _draw_summary(self):
+        for w in self._sum_tab.winfo_children():
+            w.destroy()
+        d = self.out.get('detection'); m = self.out['meta']
+        if not d:
+            ttk.Label(self._sum_tab, text='Clean stream — no injected bad data to score.',
+                      foreground=GRAY, font=('Segoe UI', 12)).pack(pady=30)
+            return
+        ttk.Label(self._sum_tab,
+                  text=f"{m['case']}  ·  {d['n_actual']} bad data evaluated over "
+                       f"{d['n_instants']} instants  (SCADA={m['use_scada']}, PMU={m['use_pmu']})",
+                  foreground=ORANGE, font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=10, pady=8)
+
+        tiles = ttk.Frame(self._sum_tab); tiles.pack(fill='x', padx=8)
+
+        def tile(cap, val, color=FG):
+            t = ttk.Frame(tiles, style='Tile.TFrame'); t.pack(side='left', padx=5)
+            ttk.Label(t, text=cap, style='TileCap.TLabel').pack(anchor='w', padx=10, pady=(5, 0))
+            ttk.Label(t, text=val, style='Tile.TLabel', font=('Segoe UI', 16, 'bold'),
+                      foreground=color).pack(anchor='w', padx=10, pady=(0, 6))
+        tile('Correctly found (TP)', str(d['tp']), GREEN)
+        tile('Missed (FN)', str(d['fn']), RED if d['fn'] else GREEN)
+        tile('Wrongly found (FP)', str(d['fp']), ORANGE if d['fp'] else GREEN)
+        tile('Precision', f"{d['precision']:.2f}")
+        tile('Recall', f"{d['recall']:.2f}")
+        tile('F1', f"{d['f1']:.2f}")
+
+        ttk.Label(self._sum_tab, text='Breakdown by measurement type', foreground=ORANGE,
+                  font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=10, pady=(14, 2))
+        cols = ('Type', 'Correct (TP)', 'Missed (FN)', 'Wrong (FP)')
+        tv = ttk.Treeview(self._sum_tab, columns=cols, show='headings', height=7)
+        for c, w in zip(cols, (130, 120, 120, 120)):
+            tv.heading(c, text=c); tv.column(c, width=w, anchor='center')
+        tv.tag_configure('miss', foreground=RED)
+        for t, v in sorted(d['by_type'].items()):
+            tag = 'miss' if (v[1] > 0 and v[0] == 0) else ''
+            tv.insert('', 'end', tags=(tag,), values=(t, v[0], v[1], v[2]))
+        tv.pack(fill='x', padx=10)
+
+        pm = d['by_mode']
+        ttk.Label(self._sum_tab,
+                  text=f"By failure mode:   persistent meters caught "
+                       f"{pm['persistent'][0]}/{sum(pm['persistent'])}     "
+                       f"transient spikes caught {pm['transient'][0]}/{sum(pm['transient'])}",
+                  foreground=FG, font=('Segoe UI', 10)).pack(anchor='w', padx=10, pady=(12, 2))
+        ttk.Label(self._sum_tab,
+                  text=f"Instants fully clean after removal: {d['clean_after']}/{d['n_instants']}",
+                  style='Sub.TLabel').pack(anchor='w', padx=10)
+        if d['injected_se_total'] > d['n_actual']:
+            ttk.Label(self._sum_tab,
+                      text=f"({d['injected_se_total']} SE-type bad injected over the full stream; "
+                           f"{d['n_actual']} fell on instants solved at this cadence)",
+                      style='Sub.TLabel').pack(anchor='w', padx=10, pady=(2, 0))
 
     # ── animation ─────────────────────────────────────────────────────────────────
     def _toggle_play(self):

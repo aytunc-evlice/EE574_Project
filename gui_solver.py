@@ -157,6 +157,8 @@ class SolverApp(tk.Tk):
         self._prog.pack(fill='x', padx=16, pady=2)
 
         self._build_scorecards()
+        self._estlabel = ttk.Label(self, text='', style='Sub.TLabel', font=('Segoe UI', 10, 'bold'))
+        self._estlabel.pack(fill='x', padx=16, pady=(2, 0))
         self._build_timebar()
 
         nb = ttk.Notebook(self); nb.pack(fill='both', expand=True, padx=16, pady=(4, 10))
@@ -172,8 +174,8 @@ class SolverApp(tk.Tk):
     def _build_scorecards(self):
         bar = ttk.Frame(self); bar.pack(fill='x', padx=16, pady=4)
         self._tiles = {}
-        specs = [('Case', 130), ('Observable', 120), ('RMSE |V| after', 130),
-                 ('RMSE |V| before', 130), ('Bad now', 90), ('Detection (run)', 170)]
+        specs = [('Case', 130), ('Observable', 120), ('RMSE before removal', 140),
+                 ('RMSE after removal', 140), ('Bad now', 90), ('Detection (run)', 170)]
         for name, w in specs:
             t = ttk.Frame(bar, style='Tile.TFrame'); t.pack(side='left', padx=4)
             ttk.Label(t, text=name, style='TileCap.TLabel').pack(anchor='w', padx=8, pady=(4, 0))
@@ -197,7 +199,8 @@ class SolverApp(tk.Tk):
         tab = ttk.Frame(nb); nb.add(tab, text=' State & Residuals ')
         body = ttk.Frame(tab); body.pack(fill='both', expand=True)
         lf = ttk.Frame(body); lf.pack(side='left', fill='both', expand=True, padx=6, pady=4)
-        ttk.Label(lf, text='Estimated state', foreground=ORANGE, font=('Segoe UI', 10, 'bold')).pack(anchor='w')
+        ttk.Label(lf, text='Estimated state (after bad-data removal)', foreground=ORANGE,
+                  font=('Segoe UI', 10, 'bold')).pack(anchor='w')
         cols = ('Bus', 'V_est', 'θ_est(°)', 'V_true', 'ΔV')
         self._state = ttk.Treeview(lf, columns=cols, show='headings', height=12)
         for c, w in zip(cols, (50, 90, 90, 90, 90)):
@@ -336,6 +339,16 @@ class SolverApp(tk.Tk):
     def _show_instant(self, i):
         res = self.out['results']; i = max(0, min(i, len(res) - 1)); r = res[i]
         self._tlabel.configure(text=f"t = {r['t']:.1f} s   ({i+1}/{len(res)})")
+        if r['n_removed']:
+            jb, ja = r.get('J_before'), r['J']
+            jtxt = (f"    J: {jb:.0f} → {ja:.0f}"
+                    if (jb is not None and ja is not None) else "")
+            self._estlabel.configure(
+                text=f"⟳  {r['n_removed']} bad measurement(s) removed → state RE-ESTIMATED{jtxt}",
+                foreground=ORANGE)
+        else:
+            self._estlabel.configure(text="✓  no bad data detected — single estimate (no removal)",
+                                     foreground=GREEN)
         self._update_scorecards(r)
         self._fill_state(r); self._fill_bad(r)
         self._draw_network(r); self._draw_residuals(r)
@@ -346,11 +359,12 @@ class SolverApp(tk.Tk):
         obs = r['observable']
         self._tiles['Observable'].configure(text='YES' if obs else 'NO',
                                             foreground=GREEN if obs else RED)
-        self._tiles['RMSE |V| after'].configure(text=_e(r['rmse_V']), foreground=FG)
         rb = r.get('rmse_V_before')
         improved = (rb is not None and r['rmse_V'] is not None and rb > 1.5 * r['rmse_V'])
-        self._tiles['RMSE |V| before'].configure(text=_e(rb),
-                                                 foreground=ORANGE if improved else GRAY)
+        self._tiles['RMSE before removal'].configure(text=_e(rb),
+                                                     foreground=ORANGE if improved else GRAY)
+        self._tiles['RMSE after removal'].configure(text=_e(r['rmse_V']),
+                                                    foreground=GREEN if improved else FG)
         self._tiles['Bad now'].configure(text=str(r['n_removed']),
                                          foreground=RED if r['n_removed'] else GREEN)
         res = self.out['results']

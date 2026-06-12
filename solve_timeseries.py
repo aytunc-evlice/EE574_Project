@@ -19,6 +19,7 @@ import os
 import sys
 import csv
 import json
+import glob
 import argparse
 import numpy as np
 
@@ -33,15 +34,66 @@ SE_TYPES = {'Vmag', 'Vang', 'Pinj', 'Qinj', 'Pflow', 'Qflow'}
 
 
 # ── configuration / network ───────────────────────────────────────────────────
-def load_config(d):
-    """Resolve the run config for a stream dir (clean has manifest.json; a
-    *_bad dir has manifest_bad.json pointing at its clean source)."""
+def load_manifest(d):
+    """Best-effort manifest for a stream dir (clean has manifest.json; a *_bad
+    dir has manifest_bad.json pointing at its clean source).  {} if none."""
     mpath = os.path.join(d, 'manifest.json')
     if os.path.exists(mpath):
-        return json.load(open(mpath)), d
-    mb = json.load(open(os.path.join(d, 'manifest_bad.json')))
-    clean = mb['source_dir']
-    return json.load(open(os.path.join(clean, 'manifest.json'))), clean
+        return json.load(open(mpath))
+    mbpath = os.path.join(d, 'manifest_bad.json')
+    if os.path.exists(mbpath):
+        clean = json.load(open(mbpath)).get('source_dir', '')
+        cm = os.path.join(clean, 'manifest.json')
+        if os.path.exists(cm):
+            return json.load(open(cm))
+    return {}
+
+
+def resolve_config(d, cdf_path=None, loads_in_pu=None, pmu_buses=None):
+    """
+    Resolve CDF / loads_in_pu / pmu_buses for a stream dir.  Explicit arguments
+    win over the manifest; if there is no manifest, a CDF must be supplied.
+    """
+    cfg = dict(load_manifest(d))
+    if cdf_path:
+        cfg['cdf_file'] = cdf_path
+    if loads_in_pu is not None:
+        cfg['loads_in_pu'] = loads_in_pu
+    if pmu_buses is not None:
+        cfg['pmu_buses'] = pmu_buses
+    if not cfg.get('cdf_file'):
+        raise ValueError("no manifest in this folder - please select a CDF file")
+    if not os.path.exists(cfg['cdf_file']):
+        raise FileNotFoundError(f"CDF file not found: {cfg['cdf_file']}")
+    cfg.setdefault('loads_in_pu', False)
+    cfg.setdefault('case', os.path.basename(d.rstrip('/\\')))
+    cfg.setdefault('pmu_buses', None)
+    return cfg
+
+
+def _time_from_name(fname):
+    """'pmu_t00012_00.dat' -> 12.0"""
+    try:
+        tag = fname.split('_t', 1)[1].rsplit('.', 1)[0]   # '00012_00'
+        return float(tag.replace('_', '.'))
+    except Exception:
+        return 0.0
+
+
+def resolve_index(d):
+    """index.csv rows if present, else auto-discover pmu/ and scada/ *.dat."""
+    p = os.path.join(d, 'index.csv')
+    if os.path.exists(p):
+        return list(csv.DictReader(open(p)))
+    rows = []
+    for kind in ('pmu', 'scada'):
+        for f in sorted(glob.glob(os.path.join(d, kind, '*.dat'))):
+            base = os.path.basename(f)
+            rows.append({'t_sec': str(_time_from_name(base)), 'kind': kind,
+                         'file': f"{kind}/{base}", 'lambda': ''})
+    if not rows:
+        raise ValueError("no index.csv and no pmu/ or scada/ *.dat files found")
+    return rows
 
 
 def build_network(cfg):
@@ -83,22 +135,32 @@ def load_badlog(d):
 
 # ── core: solve the whole stream ───────────────────────────────────────────────
 def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
-                 instants=None, progress=None):
+                 instants=None, progress=None, cdf_path=None, loads_in_pu=None,
+                 pmu_buses=None):
     if not (use_scada or use_pmu):
         raise ValueError("select at least one of SCADA / PMU")
 
-    cfg, clean_dir = load_config(d)
+    cfg = resolve_config(d, cdf_path, loads_in_pu, pmu_buses)
     net = build_network(cfg)
     nums = [b['num'] for b in net.buses]
-    slack_num = cfg['slack_bus']
+    slack_num = net.buses[net.slack_idx]['num']        # derive from net, not manifest
     vb = {b['num'] for b in net.buses}
     bs = ({(br['from_bus'], br['to_bus']) for br in net.branches}
           | {(br['to_bus'], br['from_bus']) for br in net.branches})
 
-    rows = list(csv.DictReader(open(os.path.join(d, 'index.csv'))))
+    rows = resolve_index(d)
     pmu = {round(float(r['t_sec']), 6): r['file'] for r in rows if r['kind'] == 'pmu'}
     scada = {round(float(r['t_sec']), 6): r['file'] for r in rows if r['kind'] == 'scada'}
-    lam = {round(float(r['t_sec']), 6): float(r['lambda']) for r in rows}
+    lam = {round(float(r['t_sec']), 6): (float(r['lambda']) if r.get('lambda') else None)
+           for r in rows}
+
+    # PMU buses: explicit/manifest, else infer from a PMU snapshot's Vmag/Vang
+    if not cfg.get('pmu_buses') and pmu:
+        first = next(iter(pmu.values()))
+        pm = parse_measurement_file(os.path.join(d, *first.split('/')), vb, bs)
+        cfg['pmu_buses'] = sorted({m['bus'] for m in pm
+                                   if m['type'] in ('Vmag', 'Vang') and 'bus' in m})
+    cfg.setdefault('pmu_buses', [])
 
     truth = load_truth(d, nums)
     badlog = load_badlog(d)
@@ -289,11 +351,18 @@ def main():
     ap.add_argument('--threshold', type=float, default=3.0)
     ap.add_argument('--max-removals', type=int, default=6)
     ap.add_argument('--instants', choices=['pmu', 'scada', 'all'], default=None)
+    ap.add_argument('--cdf', default=None, help='override/supply the CDF network file')
+    ap.add_argument('--loads-in-pu', action='store_true',
+                    help='CDF Load/Gen columns are per-unit (rescale by MVA base)')
+    ap.add_argument('--pmu-buses', default=None, help='comma-separated PMU bus numbers')
     args = ap.parse_args()
 
     out = solve_stream(args.dir, use_scada=not args.no_scada, use_pmu=not args.no_pmu,
                        threshold=args.threshold, max_removals=args.max_removals,
-                       instants=args.instants)
+                       instants=args.instants, cdf_path=args.cdf,
+                       loads_in_pu=(True if args.loads_in_pu else None),
+                       pmu_buses=([int(x) for x in args.pmu_buses.split(',')]
+                                  if args.pmu_buses else None))
     res = out['results']
     m = out['meta']
     n_inst = len(res)

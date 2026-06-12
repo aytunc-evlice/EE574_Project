@@ -27,7 +27,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from solve_timeseries import solve_stream
+from solve_timeseries import solve_stream, load_manifest
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -117,28 +117,38 @@ class SolverApp(tk.Tk):
                   background=BG_MID, foreground=GRAY, font=('Segoe UI', 9, 'italic')).pack(side='left')
 
         ctl = ttk.Frame(self); ctl.pack(fill='x', padx=16, pady=(8, 4))
-        ttk.Label(ctl, text='Stream folder:').grid(row=0, column=0, sticky='w')
+        ttk.Label(ctl, text='Data folder:').grid(row=0, column=0, sticky='w')
         self._dir = tk.StringVar(value=os.path.join(DATA_DIR, 'results', 'timeseries'))
-        ttk.Entry(ctl, textvariable=self._dir, font=('Consolas', 9), width=64).grid(
+        ttk.Entry(ctl, textvariable=self._dir, font=('Consolas', 9)).grid(
             row=0, column=1, columnspan=5, sticky='ew', padx=8)
         ttk.Button(ctl, text='Browse', command=self._browse).grid(row=0, column=6, padx=2)
 
+        ttk.Label(ctl, text='CDF file:').grid(row=1, column=0, sticky='w', pady=4)
+        self._cdf = tk.StringVar(value='')
+        ttk.Entry(ctl, textvariable=self._cdf, font=('Consolas', 9)).grid(
+            row=1, column=1, columnspan=3, sticky='ew', padx=8)
+        ttk.Button(ctl, text='Browse', command=self._browse_cdf).grid(row=1, column=4, padx=2, sticky='w')
+        self._loads_pu = tk.BooleanVar(value=False)
+        ttk.Checkbutton(ctl, text='loads in pu', variable=self._loads_pu).grid(row=1, column=5, sticky='w')
+        ttk.Label(ctl, text='(blank = use folder manifest)', style='Sub.TLabel').grid(
+            row=1, column=6, sticky='w')
+
         self._use_scada = tk.BooleanVar(value=True)
         self._use_pmu = tk.BooleanVar(value=True)
-        ttk.Checkbutton(ctl, text='SCADA', variable=self._use_scada).grid(row=1, column=0, sticky='w', pady=6)
-        ttk.Checkbutton(ctl, text='PMU', variable=self._use_pmu).grid(row=1, column=1, sticky='w')
-        ttk.Label(ctl, text='Threshold:').grid(row=1, column=2, sticky='e')
+        ttk.Checkbutton(ctl, text='SCADA', variable=self._use_scada).grid(row=2, column=0, sticky='w', pady=6)
+        ttk.Checkbutton(ctl, text='PMU', variable=self._use_pmu).grid(row=2, column=1, sticky='w')
+        ttk.Label(ctl, text='Threshold:').grid(row=2, column=2, sticky='e')
         self._thr = tk.StringVar(value='3.0')
-        ttk.Entry(ctl, textvariable=self._thr, width=6).grid(row=1, column=3, sticky='w', padx=4)
+        ttk.Entry(ctl, textvariable=self._thr, width=6).grid(row=2, column=3, sticky='w', padx=4)
         self._run_btn = ttk.Button(ctl, text='▶  Solve', style='Run.TButton', command=self._start)
-        self._run_btn.grid(row=1, column=4, padx=10)
+        self._run_btn.grid(row=2, column=4, padx=10)
         # clean/bad toggle
         self._which = tk.StringVar(value='clean')
         self._rb_clean = ttk.Radiobutton(ctl, text='Clean', value='clean',
                                          variable=self._which, command=self._switch_dataset, state='disabled')
         self._rb_bad = ttk.Radiobutton(ctl, text='Bad', value='bad',
                                        variable=self._which, command=self._switch_dataset, state='disabled')
-        self._rb_clean.grid(row=1, column=5, sticky='e'); self._rb_bad.grid(row=1, column=6, sticky='w')
+        self._rb_clean.grid(row=2, column=5, sticky='e'); self._rb_bad.grid(row=2, column=6, sticky='w')
         ctl.columnconfigure(1, weight=1)
 
         self._status = ttk.Label(self, text='Select a stream folder and solve.', style='Sub.TLabel')
@@ -210,9 +220,30 @@ class SolverApp(tk.Tk):
 
     # ── solve ────────────────────────────────────────────────────────────────────
     def _browse(self):
-        p = filedialog.askdirectory(title='Select a timeseries stream folder', initialdir=self._dir.get())
+        p = filedialog.askdirectory(title='Select a measurement data folder', initialdir=self._dir.get())
         if p:
             self._dir.set(p)
+            self._prefill_from_manifest(p)
+
+    def _browse_cdf(self):
+        p = filedialog.askopenfilename(title='Select CDF network file', initialdir=DATA_DIR,
+                                       filetypes=[('CDF/DAT files', '*.dat'), ('All files', '*.*')])
+        if p:
+            self._cdf.set(p)
+
+    def _prefill_from_manifest(self, d):
+        """If the folder (or its clean twin) has a manifest, pre-fill CDF + loads-in-pu."""
+        clean_dir, _ = self._twins(d)
+        for cand in (d, clean_dir):
+            try:
+                m = load_manifest(cand)
+            except Exception:
+                m = {}
+            if m:
+                if m.get('cdf_file'):
+                    self._cdf.set(m['cdf_file'])
+                self._loads_pu.set(bool(m.get('loads_in_pu')))
+                return
 
     def _twins(self, d):
         d = d.rstrip('/\\')
@@ -234,7 +265,9 @@ class SolverApp(tk.Tk):
             chosen = self._dir.get().strip()
             clean_dir, bad_dir = self._twins(chosen)
             opts = dict(use_scada=self._use_scada.get(), use_pmu=self._use_pmu.get(),
-                        threshold=float(self._thr.get()), progress=self._progress)
+                        threshold=float(self._thr.get()), progress=self._progress,
+                        cdf_path=(self._cdf.get().strip() or None),
+                        loads_in_pu=(True if self._loads_pu.get() else None))
             ds = {}
             if os.path.isfile(os.path.join(clean_dir, 'index.csv')):
                 print(f'Solving CLEAN: {clean_dir}'); ds['clean'] = solve_stream(clean_dir, **opts)

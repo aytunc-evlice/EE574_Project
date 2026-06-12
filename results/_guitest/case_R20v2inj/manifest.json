@@ -1,0 +1,52 @@
+{
+  "case": "case_RAND20",
+  "cdf_file": "D:\\Courses\\EE574\\testing\\cases\\case_RAND20.dat",
+  "mva_base": 100.0,
+  "n_buses": 20,
+  "n_branches": 25,
+  "slack_bus": 1,
+  "pmu_buses": [
+    2,
+    5,
+    8,
+    11,
+    14,
+    17,
+    20
+  ],
+  "horizon_s": 60.0,
+  "pmu_dt_s": 1.0,
+  "scada_dt_s": 5.0,
+  "seed": 99,
+  "sigma_ranges": {
+    "scada_vmag": [
+      0.008,
+      0.012
+    ],
+    "scada_pq": [
+      0.015,
+      0.025
+    ],
+    "pmu_v": [
+      5e-05,
+      0.0002
+    ],
+    "pmu_i": [
+      0.0001,
+      0.0005
+    ]
+  },
+  "inj_buses": "all",
+  "loads_in_pu": false,
+  "pmu_current": true,
+  "drop_pmu_prob": 0.0,
+  "profile": {
+    "diurnal_amp": 0.12,
+    "period_s": 60.0
+  },
+  "n_pmu_snapshots": 61,
+  "n_scada_snapshots": 13,
+  "n_scada_channels": 110,
+  "n_pmu_channels": 44,
+  "pf_non_converged": 0
+}

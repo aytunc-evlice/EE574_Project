@@ -1,0 +1,46 @@
+{
+  "source_dir": "D:\\Courses\\EE574\\results\\_guitest\\case_R20drop",
+  "max_bad_per_file": 2,
+  "n_persistent_per_stream": 1,
+  "scale_range": [
+    10.0,
+    30.0
+  ],
+  "negate_prob": 0.5,
+  "min_sigma": 10.0,
+  "scope": "both",
+  "seed": 13,
+  "persistent_meters": {
+    "scada": [
+      {
+        "type": "Pflow",
+        "loc1": 9,
+        "loc2": 13,
+        "sigma": 0.01932789,
+        "style": "negate",
+        "factor": -1.0
+      }
+    ],
+    "pmu": [
+      {
+        "type": "Imag",
+        "loc1": 20,
+        "loc2": 18,
+        "sigma": 0.0001532544,
+        "style": "negate",
+        "factor": -1.0
+      }
+    ]
+  },
+  "n_bad_total": 106,
+  "n_files_with_bad": 74,
+  "n_files_total": 74,
+  "bad_by_type": {
+    "Imag": 69,
+    "Iang": 13,
+    "Pflow": 14,
+    "Vmag": 2,
+    "Vang": 6,
+    "Pinj": 2
+  }
+}

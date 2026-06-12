@@ -15,6 +15,7 @@ It does NOT generate or inject data.   Run:  python gui_solver.py
 """
 import os
 import sys
+import ast
 import threading
 import numpy as np
 
@@ -407,7 +408,8 @@ class SolverApp(tk.Tk):
         if r['tp'] is not None:
             removed = {str(rm['key']) for rm in r['removed']}
             for k in sorted(actual - removed):
-                self._bad.insert('', 'end', tags=('fn',), values=(k, '—', '—', 'missed (FN)'))
+                self._bad.insert('', 'end', tags=('fn',),
+                                 values=(_key_label(k), '—', '—', 'missed (FN)'))
 
     def _bad_nodes_edges(self, r):
         """Bus indices and edge index-pairs flagged bad at this instant."""
@@ -556,6 +558,16 @@ class SolverApp(tk.Tk):
 
 def _e(v):
     return f"{v:.2e}" if v is not None else '—'
+
+
+def _key_label(ks):
+    """Format a measurement key string '(type, loc1, loc2)' as 'type(bus N)' /
+    'type(N-M)' to match the removed-row labels."""
+    try:
+        typ, l1, l2 = ast.literal_eval(ks)
+        return f"{typ}(bus {l1})" if l2 is None else f"{typ}({l1}-{l2})"
+    except Exception:
+        return ks
 
 
 if __name__ == '__main__':

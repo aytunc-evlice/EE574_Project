@@ -71,9 +71,10 @@ def estimate_with_bad_data(net, measurements, threshold=3.0, max_removals=6,
     meas = list(measurements)                 # copy the list; dicts are not mutated
     removed = []
     x = x0
+    x_first = None
     n_iter = 0
     converged = False
-    J = J_thr = None
+    J = J_thr = J_first = None
     r_n = r_n_first = None
     bad_present = False
     observable = len(meas) >= net.n_states
@@ -93,6 +94,8 @@ def estimate_with_bad_data(net, measurements, threshold=3.0, max_removals=6,
         _, r_n, _ = compute_normalized_residuals(net, meas, x)
         if r_n_first is None:
             r_n_first = r_n.copy()
+            x_first = x.copy()
+            J_first = J
 
         dof = len(meas) - net.n_states
         J_thr = chi2_threshold(dof, alpha)
@@ -120,9 +123,11 @@ def estimate_with_bad_data(net, measurements, threshold=3.0, max_removals=6,
 
     flagged_remaining = bool(J is not None and J_thr is not None and J > J_thr)
     V, theta = net.state_to_VT(x) if x is not None else (None, None)
+    V_first, theta_first = net.state_to_VT(x_first) if x_first is not None else (None, None)
 
     return {
         'x': x, 'V': V, 'theta': theta,
+        'V_first': V_first, 'theta_first': theta_first, 'J_first': J_first,
         'converged': converged, 'observable': observable,
         'n_iter': n_iter, 'J': J, 'J_threshold': J_thr, 'bad_present': bad_present,
         'removed': removed, 'kept': meas,

@@ -142,12 +142,14 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
         if sol['converged'] and sol['observable']:
             x_prev = sol['x']
 
-        # accuracy vs truth
-        rmse_V = rmse_ang = None
+        # accuracy vs truth (after removal) and before removal (raw fit)
+        rmse_V = rmse_ang = rmse_V_before = None
         if truth is not None and round(t, 6) in truth and sol['V'] is not None:
             Vt, THt = truth[round(t, 6)]
             rmse_V = float(np.sqrt(np.mean((sol['V'] - Vt) ** 2)))
             rmse_ang = float(np.rad2deg(np.sqrt(np.mean((sol['theta'] - THt) ** 2))))
+            if sol['V_first'] is not None:
+                rmse_V_before = float(np.sqrt(np.mean((sol['V_first'] - Vt) ** 2)))
 
         # detection scoring vs ground truth (only over measurements actually fed in)
         tp = fp = fn = None
@@ -170,7 +172,7 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
             'removed': sol['removed'],
             'r_n_first': sol['r_n_first'],
             'labels': [_lbl(m) for m in meas],
-            'rmse_V': rmse_V, 'rmse_ang': rmse_ang,
+            'rmse_V': rmse_V, 'rmse_ang': rmse_ang, 'rmse_V_before': rmse_V_before,
             'actual_bad': sorted(str(k) for k in actual),
             'tp': tp, 'fp': fp, 'fn': fn,
             'used': used,

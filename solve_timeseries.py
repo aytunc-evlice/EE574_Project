@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from src.parser    import parse_ieee_cdf, parse_measurement_file, fuse
 from src.network   import Network
 from src.se_solver import estimate_with_bad_data, meas_key
+from src.powerflow import solve_power_flow, base_injections
 
 # measurement types the WLS estimator actually uses (others can't be detected)
 SE_TYPES = {'Vmag', 'Vang', 'Pinj', 'Qinj', 'Pflow', 'Qflow'}
@@ -136,7 +137,7 @@ def load_badlog(d):
 # ── core: solve the whole stream ───────────────────────────────────────────────
 def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
                  instants=None, progress=None, cdf_path=None, loads_in_pu=None,
-                 pmu_buses=None):
+                 pmu_buses=None, prescreen_gate=300.0):
     if not (use_scada or use_pmu):
         raise ValueError("select at least one of SCADA / PMU")
 
@@ -189,8 +190,19 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
            'by_type': {}, 'by_mode': {'persistent': [0, 0], 'transient': [0, 0]},
            'injected_se_total': (sum(len(v) for v in badlog.values()) if badlog else 0)}
 
-    results = []
+    # Seed the tracker with the network-model base-case load flow.  At t=0 the
+    # load profile multiplier is 1.0, so this matches the true state of the first
+    # instant and gives the gross-error pre-screen a good prior from the start.
     x_prev = None
+    try:
+        Ps, Qs, *_ = base_injections(net)
+        V0, th0, conv, *_ = solve_power_flow(net, Ps, Qs)
+        if conv:
+            x_prev = net.VT_to_state(V0, th0)
+    except Exception:
+        x_prev = None
+
+    results = []
     for i, t in enumerate(times):
         sets, used = [], {}
         if use_scada and scada_times:
@@ -205,7 +217,8 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
             continue
 
         sol = estimate_with_bad_data(net, meas, threshold=threshold,
-                                     max_removals=max_removals, x0=x_prev)
+                                     max_removals=max_removals, x0=x_prev,
+                                     prescreen_gate=prescreen_gate)
         if sol['converged'] and sol['observable']:
             x_prev = sol['x']
 
@@ -255,11 +268,13 @@ def solve_stream(d, use_scada=True, use_pmu=True, threshold=3.0, max_removals=6,
             'V': sol['V'], 'theta': sol['theta'],
             'removed': sol['removed'],
             'r_n_first': sol['r_n_first'],
-            'labels': [_lbl(m) for m in meas],
+            'labels': sol['first_labels'] if sol['first_labels'] is not None
+                      else [_lbl(m) for m in meas],
             'rmse_V': rmse_V, 'rmse_ang': rmse_ang, 'rmse_V_before': rmse_V_before,
             'actual_bad': sorted(str(k) for k in actual),
             'tp': tp, 'fp': fp, 'fn': fn,
             'used': used,
+            'critical': sol.get('critical', []),
         })
         if progress:
             progress(i + 1, len(times), t)
@@ -401,6 +416,9 @@ def main():
     ap.add_argument('--no-pmu', action='store_true', help='exclude PMU measurements')
     ap.add_argument('--threshold', type=float, default=3.0)
     ap.add_argument('--max-removals', type=int, default=6)
+    ap.add_argument('--prescreen-gate', type=float, default=300.0,
+                    help='innovation (sigma) above which a measurement is dropped '
+                         'before the WLS solve; <=0 or inf disables (default 300)')
     ap.add_argument('--instants', choices=['pmu', 'scada', 'all'], default=None)
     ap.add_argument('--cdf', default=None, help='override/supply the CDF network file')
     ap.add_argument('--loads-in-pu', action='store_true',
@@ -408,12 +426,14 @@ def main():
     ap.add_argument('--pmu-buses', default=None, help='comma-separated PMU bus numbers')
     args = ap.parse_args()
 
+    gate = args.prescreen_gate if args.prescreen_gate and args.prescreen_gate > 0 else np.inf
     out = solve_stream(args.dir, use_scada=not args.no_scada, use_pmu=not args.no_pmu,
                        threshold=args.threshold, max_removals=args.max_removals,
                        instants=args.instants, cdf_path=args.cdf,
                        loads_in_pu=(True if args.loads_in_pu else None),
                        pmu_buses=([int(x) for x in args.pmu_buses.split(',')]
-                                  if args.pmu_buses else None))
+                                  if args.pmu_buses else None),
+                       prescreen_gate=gate)
     res = out['results']
     m = out['meta']
     n_inst = len(res)

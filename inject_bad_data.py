@@ -5,12 +5,15 @@ Takes a CLEAN stream produced by gen_measurements.py and writes a corrupted
 TWIN next to it (the clean data is never modified).  Each file gets up to
 `--max-bad` gross errors (default 2 -> at most 4 across a SCADA+PMU pair):
 
-  * persistent broken meters  - a fixed channel per stream, biased every file
+  * persistent broken meters  - a fixed channel per stream, same fault every file
   * transient spikes          - extra random channels, one file at a time
 
-Every gross error is sign * m * sigma  with m ~ U(10, 30), scaled to the
-meter's own accuracy.  Exactly WHICH measurements were corrupted is reported in
-`bad_log.csv` (one row per injected error) and summarised in `manifest_bad.json`.
+Every gross error is UNMISTAKABLY wrong relative to the truth: either a large
+multiple of the real value (bad = factor * clean, |factor| in [--scale LO HI],
+default >= 10x) or its negation (bad = -clean, with prob --negate-prob).  A
+sigma floor (--min-sigma) guarantees the change never reads as small noise.
+Exactly WHICH measurements were corrupted is reported in `bad_log.csv` (one row
+per injected error) and summarised in `manifest_bad.json`.
 
 This is data generation only - no state estimation is performed.
 
@@ -49,8 +52,16 @@ def parse_args():
                    help='max bad measurements per file (default 2)')
     p.add_argument('--n-persistent', type=int, default=1,
                    help='persistent broken meters per stream (default 1)')
-    p.add_argument('--sigma-mult', type=float, nargs=2, default=[10.0, 30.0],
-                   metavar=('LO', 'HI'), help='gross error size in units of sigma')
+    p.add_argument('--scale', type=float, nargs=2, default=[10.0, 30.0],
+                   metavar=('LO', 'HI'),
+                   help='gross error as a magnitude-multiple of the true value '
+                        '(default 10 30 -> at least 10x)')
+    p.add_argument('--negate-prob', type=float, default=0.5,
+                   help='probability a gross error is a polarity flip (bad=-clean) '
+                        'instead of a scale-up (default 0.5)')
+    p.add_argument('--min-sigma', type=float, default=10.0,
+                   help='floor on |error|/sigma so near-zero values still get a '
+                        'detectable gross error (default 10)')
     p.add_argument('--scope', choices=['both', 'scada', 'pmu'], default='both',
                    help='which streams are eligible for corruption')
     p.add_argument('--seed', type=int, default=42)
@@ -58,7 +69,9 @@ def parse_args():
 
 
 def process_case(clean_dir, out_dir, args):
-    sig_mult = tuple(args.sigma_mult)
+    scale_range = tuple(args.scale)
+    negate_prob = float(args.negate_prob)
+    min_sigma = float(args.min_sigma)
     streams_in_scope = (['scada', 'pmu'] if args.scope == 'both' else [args.scope])
 
     rows = list(csv.DictReader(open(os.path.join(clean_dir, 'index.csv'))))
@@ -66,12 +79,12 @@ def process_case(clean_dir, out_dir, args):
 
     # ── choose persistent broken meters (seeded, deterministic) ───────────────
     setup_rng = np.random.RandomState(args.seed)
-    persistent, pers_sigma = {}, {}
+    persistent = {}
     for stream in ('scada', 'pmu'):                     # fixed order for reproducibility
         if stream in streams_in_scope:
             persistent[stream] = choose_persistent(
-                channels.get(stream, []), args.n_persistent, sig_mult, setup_rng)
-            pers_sigma[stream] = dict(channels.get(stream, []))
+                channels.get(stream, []), args.n_persistent,
+                scale_range, negate_prob, setup_rng)
         else:
             persistent[stream] = {}
 
@@ -89,8 +102,8 @@ def process_case(clean_dir, out_dir, args):
             t = float(r['t_sec'])
             meas = parse_measurement_file(src, include_current=True)
             rng = file_rng(args.seed, round(t * 1000), STREAM_TAG[kind])
-            corrupted, records = inject_file(meas, persistent[kind],
-                                             args.max_bad, sig_mult, rng)
+            corrupted, records = inject_file(meas, persistent[kind], args.max_bad,
+                                             scale_range, negate_prob, min_sigma, rng)
             write_measurement_file(dst, corrupted)
             for rec in records:
                 bad_log.append({'t_sec': r['t_sec'], 'kind': kind, 'file': rel, **rec})
@@ -113,8 +126,9 @@ def process_case(clean_dir, out_dir, args):
                         r['file'], r['n_bad']])
 
     # ── bad_log.csv: the report of WHICH measurements are bad ──────────────────
-    cols = ['t_sec', 'kind', 'file', 'mode', 'type', 'loc1', 'loc2',
-            'sigma', 'clean_value', 'bad_value', 'error', 'error_sigmas', 'pos']
+    cols = ['t_sec', 'kind', 'file', 'mode', 'style', 'factor', 'type',
+            'loc1', 'loc2', 'sigma', 'clean_value', 'bad_value', 'error',
+            'error_sigmas', 'pos']
     with open(os.path.join(out_dir, 'bad_log.csv'), 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
@@ -130,12 +144,11 @@ def process_case(clean_dir, out_dir, args):
     # ── manifest_bad.json (config + persistent meters + totals) ───────────────
     def pers_report(stream):
         out = []
-        for key, bias in persistent.get(stream, {}).items():
-            sig = pers_sigma.get(stream, {}).get(key)
+        for key, f in persistent.get(stream, {}).items():
             out.append({'type': key[0], 'loc1': key[1],
                         'loc2': ('' if key[2] is None else key[2]),
-                        'sigma': sig, 'bias': bias,
-                        'error_sigmas': (bias / sig if sig else None)})
+                        'sigma': f.get('sigma'), 'style': f['style'],
+                        'factor': f['factor']})
         return out
 
     n_files_bad = sum(1 for r in index_out if r['n_bad'] > 0)
@@ -146,7 +159,9 @@ def process_case(clean_dir, out_dir, args):
         'source_dir': os.path.abspath(clean_dir),
         'max_bad_per_file': args.max_bad,
         'n_persistent_per_stream': args.n_persistent,
-        'sigma_mult_range': list(sig_mult),
+        'scale_range': list(scale_range),
+        'negate_prob': negate_prob,
+        'min_sigma': min_sigma,
         'scope': args.scope,
         'seed': args.seed,
         'persistent_meters': {'scada': pers_report('scada'),
@@ -165,8 +180,9 @@ def process_case(clean_dir, out_dir, args):
     for stream in streams_in_scope:
         for p in pers_report(stream):
             loc = f"{p['loc1']}" + (f"->{p['loc2']}" if p['loc2'] != '' else '')
-            print(f"     persistent[{stream}]: {p['type']}({loc})  "
-                  f"bias={p['bias']:+.4f}  ({p['error_sigmas']:+.1f} sigma)")
+            fault = ('negate (bad=-clean)' if p['style'] == 'negate'
+                     else f"scale x{p['factor']:+.1f}")
+            print(f"     persistent[{stream}]: {p['type']}({loc})  fault={fault}")
     return {'case': case, 'n_bad': n_bad_total, 'n_files_bad': n_files_bad,
             'n_files': len(index_out), 'out': out_dir}
 

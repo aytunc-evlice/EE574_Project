@@ -16,6 +16,7 @@ It does NOT generate or inject data.   Run:  python gui_solver.py
 import os
 import sys
 import ast
+import csv
 import threading
 import numpy as np
 
@@ -28,9 +29,24 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from solve_timeseries import solve_stream, load_manifest
+from solve_timeseries import (solve_stream, load_manifest,
+                              parse_measurement_file, meas_key, _lbl)
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def default_stream_dir():
+    """First solvable case folder under results/timeseries (has index.csv),
+    preferring the IEEE14 demo case; the base folder if none exist yet."""
+    base = os.path.join(DATA_DIR, 'results', 'timeseries')
+    cands = [os.path.join(base, 'case_IEEE14')]
+    if os.path.isdir(base):
+        cands += [os.path.join(base, n) for n in sorted(os.listdir(base))
+                  if not n.endswith('_bad')]
+    for c in cands:
+        if os.path.isfile(os.path.join(c, 'index.csv')):
+            return c
+    return base
 
 BG, BG_MID, BG_LIGHT = '#0A1628', '#0D2B5E', '#1A3A6B'
 FG, ORANGE, GREEN, RED, GRAY = '#FFFFFF', '#E87722', '#44CC88', '#FF4444', '#8899AA'
@@ -79,6 +95,10 @@ class SolverApp(tk.Tk):
         self.which = 'clean'
         self.pos = None; self.edges_idx = []
         self._playing = False; self._after_id = None
+        # clean-vs-bad data comparison state
+        self._has_bad = False; self._clean_dir = None; self._bad_dir = None
+        self._badrecs = {}; self._cmp_cache = {}
+        self._vb = set(); self._bs = set()
         self._build_styles()
         self._build_ui()
 
@@ -119,7 +139,7 @@ class SolverApp(tk.Tk):
 
         ctl = ttk.Frame(self); ctl.pack(fill='x', padx=16, pady=(8, 4))
         ttk.Label(ctl, text='Data folder:').grid(row=0, column=0, sticky='w')
-        self._dir = tk.StringVar(value=os.path.join(DATA_DIR, 'results', 'timeseries'))
+        self._dir = tk.StringVar(value=default_stream_dir())
         ttk.Entry(ctl, textvariable=self._dir, font=('Consolas', 9)).grid(
             row=0, column=1, columnspan=5, sticky='ew', padx=8)
         ttk.Button(ctl, text='Browse', command=self._browse).grid(row=0, column=6, padx=2)
@@ -167,6 +187,8 @@ class SolverApp(tk.Tk):
         self._net_tab = ttk.Frame(nb); nb.add(self._net_tab, text=' Network ')
         self._build_state_tab(nb)
         self._track_tab = ttk.Frame(nb); nb.add(self._track_tab, text=' Tracking ')
+        self._cmp_tab = ttk.Frame(nb); nb.add(self._cmp_tab, text=' Clean vs Bad Data ')
+        self._build_compare_tab()
         self._sum_tab = ttk.Frame(nb); nb.add(self._sum_tab, text=' Detection Summary ')
         cf = ttk.Frame(nb); nb.add(cf, text=' Console ')
         self._console = scrolledtext.ScrolledText(cf, state='disabled', bg=CONSOLE, fg='#B8D0F0',
@@ -177,7 +199,8 @@ class SolverApp(tk.Tk):
         bar = ttk.Frame(self); bar.pack(fill='x', padx=16, pady=4)
         self._tiles = {}
         specs = [('Case', 130), ('Observable', 120), ('RMSE before removal', 140),
-                 ('RMSE after removal', 140), ('Bad now', 90), ('Detection (run)', 170)]
+                 ('RMSE after removal', 140), ('Bad now', 90), ('Unverifiable', 100),
+                 ('Detection (run)', 170)]
         for name, w in specs:
             t = ttk.Frame(bar, style='Tile.TFrame'); t.pack(side='left', padx=4)
             ttk.Label(t, text=name, style='TileCap.TLabel').pack(anchor='w', padx=8, pady=(4, 0))
@@ -221,7 +244,25 @@ class SolverApp(tk.Tk):
         self._bad.tag_configure('tp', foreground=GREEN)
         self._bad.tag_configure('fp', foreground=ORANGE)
         self._bad.tag_configure('fn', foreground=RED)
+        self._bad.tag_configure('crit', foreground=GRAY)
         self._rframe = ttk.Frame(tab); self._rframe.pack(fill='both', expand=True, padx=6)
+
+    def _build_compare_tab(self):
+        tab = self._cmp_tab
+        self._cmp_caption = ttk.Label(tab, text='Solve a stream with a corrupted twin to compare.',
+                                      foreground=GRAY, font=('Segoe UI', 11, 'bold'))
+        self._cmp_caption.pack(anchor='w', padx=10, pady=(8, 2))
+        self._cmp_chart = ttk.Frame(tab); self._cmp_chart.pack(fill='both', expand=True, padx=6)
+        ttk.Label(tab, text='Corrupted measurements at this instant  (clean  →  bad):',
+                  foreground=ORANGE, font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=10, pady=(6, 2))
+        cols = ('Measurement', 'clean', 'bad', 'error', 'error (σ)', 'mode')
+        self._cmp_table = ttk.Treeview(tab, columns=cols, show='headings', height=6)
+        for c, w in zip(cols, (160, 115, 115, 110, 85, 95)):
+            self._cmp_table.heading(c, text=c)
+            self._cmp_table.column(c, width=w, anchor='w' if c == 'Measurement' else 'center')
+        self._cmp_table.tag_configure('persistent', foreground='#FF6F61')
+        self._cmp_table.tag_configure('transient', foreground='#FFB830')
+        self._cmp_table.pack(fill='x', padx=10, pady=(0, 8))
 
     # ── solve ────────────────────────────────────────────────────────────────────
     def _browse(self):
@@ -281,6 +322,11 @@ class SolverApp(tk.Tk):
             if not ds:
                 raise FileNotFoundError('no index.csv found in the chosen folder or its twin')
             self.datasets = ds
+            # clean-vs-bad comparison sources (same file names mirror across twins)
+            self._clean_dir, self._bad_dir = clean_dir, bad_dir
+            self._has_bad = 'bad' in ds
+            self._badrecs = self._load_bad_records(bad_dir) if self._has_bad else {}
+            self._cmp_cache = {}
             self._default_which = 'bad' if chosen.rstrip('/\\').endswith('_bad') and 'bad' in ds else \
                                   ('clean' if 'clean' in ds else 'bad')
             for k in ds:
@@ -288,7 +334,8 @@ class SolverApp(tk.Tk):
             self.after(0, self._on_solved)
         except Exception as exc:
             import traceback; traceback.print_exc()
-            self.after(0, lambda: (self._set_status(f'Error: {exc}', RED),
+            msg = str(exc)
+            self.after(0, lambda: (self._set_status(f'Error: {msg}', RED),
                                    self._run_btn.configure(state='normal')))
         finally:
             sys.stdout = old
@@ -317,6 +364,10 @@ class SolverApp(tk.Tk):
         self.edges_idx = [(bidx[br['from_bus']], bidx[br['to_bus']]) for br in net.branches]
         self.pos = spring_layout(net.n, self.edges_idx)
         self._bidx = bidx
+        # valid bus / branch sets for parsing raw measurement files (clean-vs-bad)
+        self._vb = {b['num'] for b in net.buses}
+        self._bs = ({(br['from_bus'], br['to_bus']) for br in net.branches}
+                    | {(br['to_bus'], br['from_bus']) for br in net.branches})
         self._which.set(self._default_which)
         self._switch_dataset()
         self._play_btn.configure(state='normal')
@@ -342,19 +393,25 @@ class SolverApp(tk.Tk):
     def _show_instant(self, i):
         res = self.out['results']; i = max(0, min(i, len(res) - 1)); r = res[i]
         self._tlabel.configure(text=f"t = {r['t']:.1f} s   ({i+1}/{len(res)})")
+        crit = r.get('critical', [])
+        names = ', '.join(c['label'] for c in crit[:3]) + \
+                (f' +{len(crit)-3} more' if len(crit) > 3 else '')
+        warn = (f"      ⚠ unverifiable (bad data undetectable): {names}" if crit else "")
         if r['n_removed']:
             jb, ja = r.get('J_before'), r['J']
             jtxt = (f"    J: {jb:.0f} → {ja:.0f}"
                     if (jb is not None and ja is not None) else "")
             self._estlabel.configure(
-                text=f"⟳  {r['n_removed']} bad measurement(s) removed → state RE-ESTIMATED{jtxt}",
+                text=f"⟳  {r['n_removed']} bad measurement(s) removed → state RE-ESTIMATED{jtxt}{warn}",
                 foreground=ORANGE)
         else:
-            self._estlabel.configure(text="✓  no bad data detected — single estimate (no removal)",
-                                     foreground=GREEN)
+            self._estlabel.configure(
+                text=f"✓  no bad data detected — single estimate (no removal){warn}",
+                foreground=ORANGE if crit else GREEN)
         self._update_scorecards(r)
         self._fill_state(r); self._fill_bad(r)
         self._draw_network(r); self._draw_residuals(r)
+        self._draw_compare(r)
 
     def _update_scorecards(self, r):
         m = self.out['meta']
@@ -370,6 +427,9 @@ class SolverApp(tk.Tk):
                                                     foreground=GREEN if improved else FG)
         self._tiles['Bad now'].configure(text=str(r['n_removed']),
                                          foreground=RED if r['n_removed'] else GREEN)
+        ncrit = len(r.get('critical', []))
+        self._tiles['Unverifiable'].configure(text=str(ncrit),
+                                              foreground=ORANGE if ncrit else GREEN)
         res = self.out['results']
         if m['has_badlog']:
             TP = sum(x['tp'] for x in res); FP = sum(x['fp'] for x in res); FN = sum(x['fn'] for x in res)
@@ -412,6 +472,10 @@ class SolverApp(tk.Tk):
             for k in sorted(actual - removed):
                 self._bad.insert('', 'end', tags=('fn',),
                                  values=(_key_label(k), '—', '—', 'missed (FN)'))
+        for c in r.get('critical', []):
+            self._bad.insert('', 'end', tags=('crit',),
+                             values=(c['label'], '—', f"{c['value']:.5f}",
+                                     'unverifiable (blind spot)'))
 
     def _bad_nodes_edges(self, r):
         """Bus indices and edge index-pairs flagged bad at this instant."""
@@ -424,11 +488,24 @@ class SolverApp(tk.Tk):
                 edges.add(frozenset((self._bidx[rm['from_bus']], self._bidx[rm['to_bus']])))
         return nodes, edges
 
+    def _crit_nodes_edges(self, r):
+        """Bus indices and edge index-pairs with unverifiable channels."""
+        nodes, edges = set(), set()
+        for c in r.get('critical', []):
+            _, l1, l2 = c['key']
+            if l2 is None:
+                if l1 in self._bidx:
+                    nodes.add(self._bidx[l1])
+            elif l1 in self._bidx and l2 in self._bidx:
+                edges.add(frozenset((self._bidx[l1], self._bidx[l2])))
+        return nodes, edges
+
     def _draw_network(self, r):
         for w in self._net_tab.winfo_children():
             w.destroy()
         net = self.out['net']; nums = self.out['nums']; pos = self.pos
         bad_nodes, bad_edges = self._bad_nodes_edges(r)
+        crit_nodes, crit_edges = self._crit_nodes_edges(r)
         pmu = set(self.out['meta']['pmu_buses'])
         fig = Figure(figsize=(9, 6.4), facecolor=BG)
         ax = fig.add_subplot(111, facecolor=BG_MID); ax.axis('off')
@@ -436,10 +513,14 @@ class SolverApp(tk.Tk):
                      f"{r['n_removed']} bad removed", color=FG, fontsize=11, fontweight='bold')
         # edges
         for (i, j) in self.edges_idx:
-            bad = frozenset((i, j)) in bad_edges
+            e = frozenset((i, j))
+            bad = e in bad_edges
+            crit = e in crit_edges and not bad
             ax.plot([pos[i, 0], pos[j, 0]], [pos[i, 1], pos[j, 1]],
-                    color=RED if bad else '#33486B', lw=3.0 if bad else 1.3,
-                    zorder=2 if bad else 1)
+                    color=RED if bad else (GRAY if crit else '#33486B'),
+                    lw=3.0 if bad else (2.4 if crit else 1.3),
+                    ls=(0, (4, 3)) if crit else '-',
+                    zorder=2 if (bad or crit) else 1)
         # nodes coloured by |V|
         V = r['V'] if r['V'] is not None else np.full(len(nums), np.nan)
         if r['V'] is not None:
@@ -456,10 +537,17 @@ class SolverApp(tk.Tk):
             if k in bad_nodes:
                 ax.scatter(pos[k, 0], pos[k, 1], s=720, facecolors='none',
                            edgecolors=RED, linewidths=2.6, zorder=5)
+            if k in crit_nodes and k not in bad_nodes:
+                ax.scatter(pos[k, 0], pos[k, 1], s=720, facecolors='none',
+                           edgecolors=GRAY, linewidths=2.2, linestyle=(0, (4, 3)),
+                           zorder=5)
             ax.annotate(str(n), (pos[k, 0], pos[k, 1]), color=FG, fontsize=7,
                         ha='center', va='center', zorder=6)
         ax.scatter([], [], s=120, facecolors='none', edgecolors=GREEN, label='PMU bus')
         ax.scatter([], [], s=120, facecolors='none', edgecolors=RED, label='bad data')
+        if crit_nodes or crit_edges:
+            ax.plot([], [], color=GRAY, ls=(0, (4, 3)), lw=2.2,
+                    label='unverifiable channel')
         ax.legend(facecolor=BG_LIGHT, labelcolor=FG, fontsize=8, loc='upper right')
         fig.tight_layout()
         c = FigureCanvasTkAgg(fig, master=self._net_tab); c.draw()
@@ -472,16 +560,31 @@ class SolverApp(tk.Tk):
             return
         rn = np.abs(r['r_n_first']); labels = r['labels']
         removed = {rm['label'] for rm in r['removed']}
+        crit = {c['label'] for c in r.get('critical', [])}
         fig = Figure(figsize=(10, 2.7), facecolor=BG)
         ax = fig.add_subplot(111, facecolor=BG_MID)
         for sp in ax.spines.values():
             sp.set_color(BG_LIGHT)
         ax.tick_params(colors=GRAY)
-        colors = [RED if labels[i] in removed else BLUE for i in range(len(rn))]
+        colors = [RED if labels[i] in removed else
+                  GRAY if labels[i] in crit else BLUE for i in range(len(rn))]
         ax.bar(np.arange(len(rn)), rn, color=colors, zorder=3)
-        ax.axhline(float(self._thr.get() or 3.0), color=ORANGE, ls='--', lw=1.3, label='threshold')
-        ax.set_title('Normalized residuals at this instant (red = removed)', color=FG, fontsize=10)
-        ax.set_ylabel('|r_n|', color=GRAY, fontsize=9); ax.legend(facecolor=BG_LIGHT, labelcolor=FG, fontsize=8)
+        thr = float(self._thr.get() or 3.0)
+        if crit:
+            top = max(float(np.max(rn)), thr)
+            for i in range(len(rn)):
+                if labels[i] in crit:
+                    ax.annotate(labels[i], (i, rn[i] + 0.02 * top), color=GRAY,
+                                fontsize=8, ha='center', va='bottom', rotation=90)
+        ax.axhline(thr, color=ORANGE, ls='--', lw=1.3, label='threshold')
+        ax.set_title('Normalized residuals at this instant (red = removed, gray = unverifiable)',
+                     color=FG, fontsize=10)
+        ax.set_ylabel('|r_n|', color=GRAY, fontsize=9)
+        handles, _ = ax.get_legend_handles_labels()
+        if crit:
+            from matplotlib.patches import Patch
+            handles.append(Patch(facecolor=GRAY, label='unverifiable (blind spot)'))
+        ax.legend(handles=handles, facecolor=BG_LIGHT, labelcolor=FG, fontsize=8)
         ax.grid(axis='y', color=BG_LIGHT, alpha=.5)
         fig.tight_layout()
         c = FigureCanvasTkAgg(fig, master=self._rframe); c.draw()
@@ -573,6 +676,127 @@ class SolverApp(tk.Tk):
                       text=f"({d['injected_se_total']} SE-type bad injected over the full stream; "
                            f"{d['n_actual']} fell on instants solved at this cadence)",
                       style='Sub.TLabel').pack(anchor='w', padx=10, pady=(2, 0))
+
+    # ── clean vs bad raw-data comparison ─────────────────────────────────────────
+    def _load_bad_records(self, bad_dir):
+        """bad_log.csv -> {relfile: [{key,label,type,clean,bad,error,sigmas,mode}]}."""
+        out = {}
+        p = os.path.join(bad_dir, 'bad_log.csv')
+        if not os.path.isfile(p):
+            return out
+        try:
+            with open(p, newline='') as f:
+                for row in csv.DictReader(f):
+                    loc2 = row['loc2']
+                    l1 = int(row['loc1']); l2 = None if loc2 in ('', None) else int(loc2)
+                    label = f"{row['type']}({l1})" if l2 is None else f"{row['type']}({l1}-{l2})"
+                    out.setdefault(row['file'], []).append({
+                        'key': (row['type'], l1, l2), 'label': label, 'type': row['type'],
+                        'clean': float(row['clean_value']), 'bad': float(row['bad_value']),
+                        'error': float(row['error']), 'sigmas': float(row['error_sigmas']),
+                        'mode': row.get('mode', ''),
+                    })
+        except Exception:
+            return {}
+        return out
+
+    def _compare_corrupted(self, r):
+        """Corrupted records for this instant's files (authoritative, from bad_log)."""
+        recs = []
+        for rel in r.get('used', {}).values():
+            recs.extend(self._badrecs.get(rel, []))
+        return recs
+
+    def _compare_baseline(self, r):
+        """All measurements paired clean-vs-bad -> [{label,dsig,is_bad}] (cached).
+        None if the clean twin files cannot be read for this instant."""
+        key = round(r['t'], 6)
+        if key in self._cmp_cache:
+            return self._cmp_cache[key]
+        rows, ok = [], False
+        try:
+            for rel in r.get('used', {}).values():
+                cpath = os.path.join(self._clean_dir, *rel.split('/'))
+                bpath = os.path.join(self._bad_dir, *rel.split('/'))
+                if not (os.path.isfile(cpath) and os.path.isfile(bpath)):
+                    continue
+                clean = {meas_key(m): m for m in parse_measurement_file(cpath, self._vb, self._bs)}
+                for m in parse_measurement_file(bpath, self._vb, self._bs):
+                    c = clean.get(meas_key(m))
+                    if c is None:
+                        continue
+                    sig = m.get('sigma') or 0.0
+                    diff = m['value'] - c['value']
+                    rows.append({'label': _lbl(m),
+                                 'dsig': (diff / sig) if sig else 0.0,
+                                 'is_bad': abs(diff) > 1e-9})
+                    ok = True
+        except Exception:
+            ok = False
+        res = rows if ok else None
+        self._cmp_cache[key] = res
+        return res
+
+    def _draw_compare(self, r):
+        for w in self._cmp_chart.winfo_children():
+            w.destroy()
+        for it in self._cmp_table.get_children():
+            self._cmp_table.delete(it)
+        if not self._has_bad:
+            self._cmp_caption.configure(
+                text='No corrupted twin for this stream — nothing to compare.', foreground=GRAY)
+            return
+
+        corrupted = self._compare_corrupted(r)
+        baseline = self._compare_baseline(r)
+        worst = max(corrupted, key=lambda x: abs(x['sigmas'])) if corrupted else None
+        n_tot = len(baseline) if baseline is not None else None
+        cap = (f"t = {r['t']:.1f} s   ·   {len(corrupted)} "
+               f"{'measurement' if len(corrupted) == 1 else 'measurements'} corrupted"
+               + (f" of {n_tot}" if n_tot is not None else ""))
+        if worst:
+            cap += f"   ·   worst: {worst['label']}  {worst['sigmas']:+.1f}σ off"
+        self._cmp_caption.configure(text=cap, foreground=RED if corrupted else GREEN)
+
+        # chart: clean value vs injected-bad value for the corrupted channels
+        fig = Figure(figsize=(10, 3.4), facecolor=BG)
+        ax = fig.add_subplot(111, facecolor=BG_MID)
+        for sp in ax.spines.values():
+            sp.set_color(BG_LIGHT)
+        ax.tick_params(colors=GRAY)
+        ax.set_title('Clean value vs injected-bad value at this instant',
+                     color=FG, fontsize=10)
+        if corrupted:
+            labels = [x['label'] for x in corrupted]
+            clean_v = np.array([x['clean'] for x in corrupted])
+            bad_v = np.array([x['bad'] for x in corrupted])
+            xp = np.arange(len(corrupted)); w = 0.38
+            ax.bar(xp - w / 2, clean_v, width=w, color=GREEN, zorder=3, label='clean (true + noise)')
+            ax.bar(xp + w / 2, bad_v, width=w, color=RED, zorder=3, label='bad (injected)')
+            for i in range(len(corrupted)):
+                ax.annotate(f"{corrupted[i]['sigmas']:+.0f}σ", (xp[i] + w / 2, bad_v[i]),
+                            color=FG, fontsize=8, ha='center',
+                            va='bottom' if bad_v[i] >= 0 else 'top')
+            ax.set_xticks(xp)
+            ax.set_xticklabels(labels, rotation=20, ha='right', color=GRAY, fontsize=8)
+            ax.axhline(0, color=GRAY, lw=0.8)
+            ax.set_ylabel('measurement value', color=GRAY, fontsize=9)
+            ax.legend(facecolor=BG_LIGHT, labelcolor=FG, fontsize=8)
+        else:
+            ax.text(0.5, 0.5, 'no corrupted measurements at this instant',
+                    color=GREEN, ha='center', va='center', transform=ax.transAxes, fontsize=12)
+            ax.set_xticks([]); ax.set_yticks([])
+        ax.grid(axis='y', color=BG_LIGHT, alpha=.4)
+        fig.tight_layout()
+        c = FigureCanvasTkAgg(fig, master=self._cmp_chart); c.draw()
+        c.get_tk_widget().pack(fill='both', expand=True)
+
+        # table: the corrupted channels, clean -> bad
+        for x in sorted(corrupted, key=lambda e: -abs(e['sigmas'])):
+            tag = x['mode'] if x['mode'] in ('persistent', 'transient') else ''
+            self._cmp_table.insert('', 'end', tags=(tag,), values=(
+                x['label'], f"{x['clean']:.5f}", f"{x['bad']:.5f}",
+                f"{x['error']:+.5f}", f"{x['sigmas']:+.1f}", x['mode'] or '—'))
 
     # ── animation ─────────────────────────────────────────────────────────────────
     def _toggle_play(self):

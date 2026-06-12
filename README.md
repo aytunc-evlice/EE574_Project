@@ -187,12 +187,22 @@ it (the clean data is never modified), so you have matched clean/bad datasets.
 Each file gets up to `--max-bad` gross errors (default **2** → at most 4 across a
 SCADA + PMU pair at one instant):
 
-- **persistent broken meters** — a fixed channel per stream is biased in *every*
-  file (a miscalibrated/stuck meter);
+- **persistent broken meters** — a fixed channel per stream carries the *same*
+  fault (a recurring gain or polarity fault) in every file;
 - **transient spikes** — extra random channels are corrupted one file at a time.
 
-Every gross error is `sign · m · σ` with `m ∼ U(10, 30)`, scaled to that meter's
-own accuracy. **Exactly which measurements are bad is reported** in `bad_log.csv`.
+Each gross error is made **unmistakably** wrong relative to the truth — never a
+small perturbation that could pass for noise:
+
+- **scale** — `bad = factor · clean` with `|factor| ∈ [--scale LO HI]` (default
+  **≥ 10×** the real value);
+- **negate** — `bad = −clean` (polarity reversal), chosen with prob `--negate-prob`.
+
+Voltage magnitude (`Vmag`) is special-cased to a large **positive** multiple only
+— a meter cannot read a negative `|V|`, and a negated PMU voltage is an extreme
+self-masking leverage point. A σ floor (`--min-sigma`, default 10) guarantees the
+change is gross even when the true value is near zero. **Exactly which
+measurements are bad is reported** in `bad_log.csv`.
 
 ```bash
 python inject_bad_data.py --dir results/timeseries/case_RAND20   # one case
@@ -204,11 +214,22 @@ python inject_bad_data.py --all results/timeseries               # every clean c
 
 | File | Contents |
 |---|---|
-| `bad_log.csv` | one row per injected error: `t_sec, kind, file, mode, type, loc1, loc2, sigma, clean_value, bad_value, error, error_sigmas, pos` |
+| `bad_log.csv` | one row per injected error: `t_sec, kind, file, mode, style, factor, type, loc1, loc2, sigma, clean_value, bad_value, error, error_sigmas, pos` |
 | `manifest_bad.json` | config + the persistent broken meters + totals |
 
-**Options:** `--max-bad 2`, `--n-persistent 1`, `--sigma-mult 10 30`,
-`--scope {both,scada,pmu}`, `--seed`. Reproducible for a given `(seed, args)`.
+**Options:** `--max-bad 2`, `--n-persistent 1`, `--scale 10 30`,
+`--negate-prob 0.5`, `--min-sigma 10`, `--scope {both,scada,pmu}`, `--seed`.
+Reproducible for a given `(seed, args)`.
+
+> **Detecting gross errors.** A ×10–30 error on a high-weight (tiny-σ) PMU channel
+> is an extreme leverage point: a plain WLS solve *fits* it and smears the
+> inconsistency onto good neighbours. `solve_timeseries.py` therefore runs a
+> **gross-error pre-screen** — it gates each measurement's innovation against the
+> tracked state (seeded from the network-model base-case load flow) and drops the
+> solve-destroying outliers (`--prescreen-gate`, default 300 σ) before the WLS
+> solve; the normalized-residual loop then removes the moderate errors at proper
+> sensitivity. This keeps precision ≈ 1.0 and recall ≈ 0.9–1.0 across all cases,
+> and even catches the PMU voltage-angle errors that a residual-only test misses.
 
 ---
 
